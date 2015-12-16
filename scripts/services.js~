@@ -31,13 +31,13 @@ var bidReportsAppServices = angular.module('bidReportsAppServices', [])
                });
                return def;
            },
-           getEventsByProgramStageAndOU : function(programStage,ouId,ouMode){
+           getEventsByProgramStage : function(programStage){
                var def = $.Deferred();
                $.ajax({
                    type: "GET",
                    dataType: "json",
                    contentType: "application/json",
-                   url: '../../events.json?skipPaging=true&programStage='+programStage+'&orgUnit='+ouId+'&ouMode='+ouMode,
+                   url: '../../events.json?skipPaging=true&programStage='+programStage,
                    success: function (data) {
                        def.resolve(data.events);
                    }
@@ -179,7 +179,7 @@ var bidReportsAppServices = angular.module('bidReportsAppServices', [])
                    type: "GET",
                    dataType: "json",
                    contentType: "application/json",
-                   url: '../../programs.json?fields=id,name,programStages[*],programTrackedEntityAttributes[trackedEntityAttribute]',
+                   url: '../../programs.json?fields=id,name,programTrackedEntityAttributes[trackedEntityAttribute]',
                    success: function (data) {
                        def.resolve(data.programs);
                    }
@@ -199,11 +199,12 @@ var bidReportsAppServices = angular.module('bidReportsAppServices', [])
                 }
                 return map;
             },
-            prepareDataElementIdToObjectMap : function(object,id){
+            prepareDaIdToObjectMap : function(object,id){
                 var map = [];
 
+
                 for (var i=0;i<object.length;i++){
-                    map[object[i].dataElement.id] = object[i];
+                    map[object[i][id]] = object[i];
                 }
                 return map;
             }

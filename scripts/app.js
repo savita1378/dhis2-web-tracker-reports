@@ -11,6 +11,7 @@ var bidReportsApp = angular.module('bidReportsApp',['ui.bootstrap',
     'd2Directives',
     'd2Filters',
     'd2Services',
+    'angularLocalStorage',
     'pascalprecht.translate',
     'bidReportsAppServices'
 ])

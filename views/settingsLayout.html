@@ -1,0 +1,19 @@
+
+<div class="modal-header page">
+    <h3>{{'select_columns_to_show'| translate}}</h3>
+</div>
+<div class="modal-body page">
+    <table class="listTable dhis2-table-striped-border">
+        <tr ng-repeat="header in reportTemplate.header">
+            <td ng-click="header.show = !header.show">
+                {{header.name}}
+            </td>
+            <td>
+                <input type="checkbox" ng-model="header.show">
+            </td>
+        </tr>
+    </table>
+</div>
+<div class="modal-footer page">
+    <button class="btn btn-default" data-ng-click="close()">{{'close'| translate}}</button>
+</div>

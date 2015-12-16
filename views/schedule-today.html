@@ -9,7 +9,42 @@
 </div>
 
 <div id="mainPage">
-    <div ng-include="'views/reportForm.html'"></div>
+    <h2><i>(POC)Report : Who could come today? And for what vaccine?</i></h2>
 
+    <div ng-include="'views/reportForm.html'">    </div>
+    <div ng-show="reportTemplate">
 
+<label class="label-info">{{messageToUser}}</label>
+    <div class="pull-right " >
+        <button class="btn btn-info"
+                type="button"
+                ng-click="showHideColumns()">
+            {{'showhide' | translate}}
+        </button>
+        <button class="btn btn-info"
+                type="button"
+                ng-click="saveLayoutForUser()">
+            {{'save-layout' | translate}}
+        </button>
+    </div>
+        <div>
+    <table class="table table-striped dhis2-table-hover table-bordered">
+        <tr><th></th><th ng-repeat="header in reportTemplate.header" ng-show="header.show" ng-class="{'tableAttribute' :header.type == 'attribute','tableDataElement' :header.type == 'dataElement'}">{{header.name}}</th></tr>
+        <tr ><th>#</th><th ng-repeat="header in reportTemplate.header" ng-show="header.show" ng-class="{'totalRow' :header.type == 'dataElement'}"><span class="totals" ng-show="totals[header.id] > 0">{{totals[header.id]}}</span></th></tr>
+
+        <tr ng-repeat="event in reportEvents" ng-class="{'overDueRow' : event.event.isOverDue}">
+            <td>{{$index+1}}</td>
+            <td ng-repeat="header in reportTemplate.header" ng-show="header.show" title="{{header.name}}">
+            <div ng-switch on="event.reportTEAPlusDeValueMap[header.id].value">
+                <span ng-switch-when="hidden"></span>
+                <span ng-switch-when="visible"><img height="33" width="33" src="resources/images/scheduled2.png"></span>
+                <span ng-switch-when="true"><img height="33" width="33" src="resources/images/check.png"></span>
+                <span ng-switch-default>{{event.reportTEAPlusDeValueMap[header.id].value }}</span>
+            </div>
+            </td>
+        </tr>
+
+    </table>
+
+    </div>
 </div>
