@@ -67,7 +67,7 @@ var bidReportsAppServices = angular.module('bidReportsAppServices', [])
                    type: "GET",
                    dataType: "json",
                    contentType: "application/json",
-                   url: '../../programIndicators.json?paging=false&filter=program.id:eq:'+programUid,
+                   url: '../../programIndicators.json?fields=*&paging=false&filter=program.id:eq:'+programUid,
                    success: function (data) {
                        //var pr = data.programs;
                        //var programs = [];
@@ -76,11 +76,83 @@ var bidReportsAppServices = angular.module('bidReportsAppServices', [])
                        //        programs.push(pr);
                        //    }
                        //});
-                       def.resolve(data.programs);
+                       def.resolve(data.programIndicators);
                    }
                });
                return def.promise;
            },
+           getProgramValidationsByProgram : function(programUid){
+               //var roles = SessionStorageService.get('USER_ROLES');
+               //var userRoles = roles && roles.userCredentials && roles.userCredentials.userRoles ? roles.userCredentials.userRoles : [];
+               //var ou = SessionStorageService.get('SELECTED_OU');
+
+               var def = $q.defer();
+               $.ajax({
+                   type: "GET",
+                   dataType: "json",
+                   contentType: "application/json",
+                   url: '../../programValidations.json?fields=*&paging=false&filter=program.id:eq:'+programUid,
+                   success: function (data) {
+                       //var pr = data.programs;
+                       //var programs = [];
+                       //angular.forEach(prs, function(pr){
+                       //    if(pr.organisationUnits.hasOwnProperty( ou.id ) && userHasValidRole(pr, userRoles)){
+                       //        programs.push(pr);
+                       //    }
+                       //});
+                       def.resolve(data.programValidations);
+                   }
+               });
+               return def.promise;
+           }, getProgramRuleVariablesByProgram : function(programUid){
+               //var roles = SessionStorageService.get('USER_ROLES');
+               //var userRoles = roles && roles.userCredentials && roles.userCredentials.userRoles ? roles.userCredentials.userRoles : [];
+               //var ou = SessionStorageService.get('SELECTED_OU');
+
+               var def = $q.defer();
+               $.ajax({
+                   type: "GET",
+                   dataType: "json",
+                   contentType: "application/json",
+                   url: '../../programRuleVariables.json?fields=*&paging=false&filter=program.id:eq:'+programUid,
+                   success: function (data) {
+                       //var pr = data.programs;
+                       //var programs = [];
+                       //angular.forEach(prs, function(pr){
+                       //    if(pr.organisationUnits.hasOwnProperty( ou.id ) && userHasValidRole(pr, userRoles)){
+                       //        programs.push(pr);
+                       //    }
+                       //});
+                       def.resolve(data.programRuleVariables);
+                   }
+               });
+               return def.promise;
+           },
+           getProgramRulesByProgram : function(programUid){
+               //var roles = SessionStorageService.get('USER_ROLES');
+               //var userRoles = roles && roles.userCredentials && roles.userCredentials.userRoles ? roles.userCredentials.userRoles : [];
+               //var ou = SessionStorageService.get('SELECTED_OU');
+
+               var def = $q.defer();
+               $.ajax({
+                   type: "GET",
+                   dataType: "json",
+                   contentType: "application/json",
+                   url: '../../programRules.json?fields=*,programRuleActions[*]&paging=false&filter=program.id:eq:'+programUid,
+                   success: function (data) {
+                       //var pr = data.programs;
+                       //var programs = [];
+                       //angular.forEach(prs, function(pr){
+                       //    if(pr.organisationUnits.hasOwnProperty( ou.id ) && userHasValidRole(pr, userRoles)){
+                       //        programs.push(pr);
+                       //    }
+                       //});
+                       def.resolve(data.programRules);
+                   }
+               });
+               return def.promise;
+           },
+
            getProgramStage : function(UID){
 
                var def = $q.defer();

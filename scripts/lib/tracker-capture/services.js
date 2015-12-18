@@ -1284,10 +1284,10 @@ bidReportsApp
                     });
 
                     var programIndicators = {rules:programRules, variables:variables};
-                    
-                    MetaDataFactory.getByProgram('programValidations',programUid).then(function(programValidations){                    
-                        MetaDataFactory.getByProgram('programRuleVariables',programUid).then(function(programVariables){                    
-                            MetaDataFactory.getByProgram('programRules',programUid).then(function(prs){
+
+                    MetadataService.getProgramValidationsByProgram('programValidations',programUid).then(function(programValidations){
+                        MetadataService.getProgramRuleVariablesByProgram(programUid).then(function(programVariables){
+                            MetadataService.getProgramRulesByProgram(programUid).then(function(prs){
                                 var programRules = [];
                                 angular.forEach(prs, function(rule){
                                     rule.actions = [];

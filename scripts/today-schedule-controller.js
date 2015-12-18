@@ -46,13 +46,7 @@ bidReportsApp
         MetadataService.getAllProgramStages().then(function (programStages) {
             $scope.programStages = programStages;
 
-            //make map
-            //$scope.programStagesMap = utilityService.prepareIdToObjectMap($scope.programStages, "id");
-            // Extract De from prstDE and put them in a map
 
-            // MAKE THIS RECURSIVE ===================================HEADACHE
-            //fields=*,programStageDataElements[*,dataElement[*]]
-            //FIX LIKE ABOVE TODO
             $scope.programStagesMap = [];
             $scope.programStageDeDesMap = [];
             for (var i=0;i< $scope.programStages.length;i++){
@@ -64,11 +58,14 @@ bidReportsApp
 
         //# get program rules for all programs and put them in a map for further use
         $scope.programRulesByProgramMap = [];
+        $scope.programRulesLoadingPromise = $.Deferred();
         //get all programs
         MetadataService.getAllProgramIds().then(function (programs) {
             function fetchRules(index, programs) {
-                if (index >= programs.length)
+                if (index >= programs.length) {
+                    $scope.programRulesLoadingPromise.resolve("Done");
                     return
+                }
 
                 TrackerRulesFactory.getRules(programs[index].id).then(function (rules) {
                     $scope.programRulesByProgramMap[programs[index].id] = rules;
@@ -97,8 +94,16 @@ bidReportsApp
             }
         }
 
-
         $scope.generateReport = function () {
+
+            $scope.programRulesLoadingPromise.then(function(response){
+                if (response == "Done"){
+                    $scope.makeReport();
+                }
+            })
+        }
+
+            $scope.makeReport = function () {
 
             $scope.reportEventsMap = [];
             $scope.reportEvents = [];
