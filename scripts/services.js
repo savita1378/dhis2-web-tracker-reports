@@ -251,7 +251,7 @@ var bidReportsAppServices = angular.module('bidReportsAppServices', [])
                    type: "GET",
                    dataType: "json",
                    contentType: "application/json",
-                   url: '../../programs.json?fields=id,name,programStages[*],programTrackedEntityAttributes[trackedEntityAttribute]',
+                   url: '../../programs.json?fields=id,name,programStages[*],programTrackedEntityAttributes[trackedEntityAttribute[id,displayName]]',
                    success: function (data) {
                        def.resolve(data.programs);
                    }

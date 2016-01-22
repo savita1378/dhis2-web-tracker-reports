@@ -14,7 +14,7 @@ bidReportsApp
                                                      TrackerRulesExecutionService,
                                                      userSettingsService,
                                                      $modal) {
-        
+
         const userSettingKeySuffix = "-bidReportsApp";
         $scope.loading = false;
         $scope.selectedOuMode = {name : "SELECTED"};
@@ -80,7 +80,7 @@ bidReportsApp
          userSettingsService.getCurrentUser().then(function(user){
             $scope.currentUser = user;
          })
-       
+
         // Get all scheduled events
         // Get TEI attributes
 
@@ -110,7 +110,6 @@ bidReportsApp
             $scope.loading = true;
 
             prepareReportTemplate();
-                       
 
             $scope.TEIMap = [];
             MetadataService.getEventsByProgramStageAndOU($scope.selectedProgramStage.id,$scope.selectedOrgUnit.id,$scope.selectedOuMode.name).then(function (events) {
@@ -364,7 +363,7 @@ bidReportsApp
             return deValueMap;
         }
         extractDeValue = function(deId,evs,programStageId){
-            
+
             for (var i=0;i<evs.byStage[programStageId].length;i++){
                 if (evs.byStage[programStageId][i].dataValues){
                     for (var dvCount=0; dvCount < evs.byStage[programStageId][i].dataValues.length;dvCount++){
@@ -377,7 +376,7 @@ bidReportsApp
                 }
             }
             return false;
-            
+
         }
         mergeMap = function(overWrittenMap,overWriterMap){
 
@@ -446,7 +445,7 @@ bidReportsApp
                         $scope.reportTemplateHeaderLayoutMap = utilityService.prepareIdToObjectMap(userSetting.scheduledReport[i].layout,"id");
                     }
                 }
-                    
+
                 // JSONFORMAT -
                 // reportTemplate = {
                 //    header : [
@@ -474,7 +473,7 @@ bidReportsApp
                 // Fill TEA
                 for (var i=0;i< $scope.programTEAMap[$scope.selectedProgram.id].length;i++){
                     $scope.reportTemplate.header.push({
-                        name : $scope.programTEAMap[$scope.selectedProgram.id][i].name,
+                        name : $scope.programTEAMap[$scope.selectedProgram.id][i].displayName,
                         id : $scope.programTEAMap[$scope.selectedProgram.id][i].id,
                         type: "attribute",
                         show : $scope.reportTemplateHeaderLayoutMap[ $scope.programTEAMap[$scope.selectedProgram.id][i].id]?$scope.reportTemplateHeaderLayoutMap[ $scope.programTEAMap[$scope.selectedProgram.id][i].id].show:true });
@@ -504,7 +503,7 @@ bidReportsApp
                 }
             }
         }
-      
+
         formatAtt = function(map,attributes){
             for (var i=0;i<attributes.length;i++){
 
