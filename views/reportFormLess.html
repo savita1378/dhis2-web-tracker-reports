@@ -1,0 +1,27 @@
+<div class="row">
+    <div class="col-sm-8 col-md-6">
+        <table class="table table-borderless table-striped">
+            <tr>
+                <td>{{'orgUnitLabel' | translate}}</td>
+                <td>
+                    <input type="text" class="form-control" value="{{selectedOrgUnit.name|| 'please_select'| translate}}" ng-disabled="true">                                                                                        
+                </td>
+            </tr>            
+            <tr>
+                <td class='col-sm-4 col-md-3 vertical-center'>{{'org_unit_scope'| translate}}</td>
+                <td class='col-sm-4 col-md-3'>                 
+                    <label><input type="radio" ng-model="selectedOuMode.name" name="selected" value="SELECTED"> {{'SELECTED'| translate}}</label><br/>
+                    <label><input type="radio" ng-model="selectedOuMode.name" name="children" value="CHILDREN"> {{'CHILDREN'| translate}}</label><br/>
+                    <label><input type="radio" ng-model="selectedOuMode.name" name="descendants" value="DESCENDANTS"> {{'DESCENDANTS'| translate}}</label><br/>
+                </td>
+            </tr>
+
+        </table>
+        <div class="col-md-6 trim">
+            <button type="button" class="btn btn-primary" ng-click="generateReport()" >{{'generate_report'| translate}}</button>
+            <img ng-show="loading"  src="resources/images/loader-circle.GIF">
+
+        </div>
+    </div>
+
+</div>

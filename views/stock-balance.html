@@ -1,0 +1,28 @@
+<div id="leftBar">
+    <d2-left-bar></d2-left-bar>
+
+    <div id="orgUnitTree">
+        <ul>
+        </ul>
+    </div>
+
+</div>
+
+<div id="mainPage">
+    <h2>Stock Balance Report</h2>
+
+    <div ng-include="'views/reportFormLess.html'">    </div>
+    <div ng-show="showReport">
+        <table class="table table-striped dhis2-table-hover table-bordered">
+        <tr><th>S No</th><th ng-repeat="header in stockBalance.headers">{{header.name}}</th></tr>
+
+        <tr ng-repeat="row in stockBalance.rows">
+            <td>{{$index+1}}</td>
+            <td>{{row[0]}}</td>
+            <td>{{row[1]}}</td>
+        </tr>
+
+
+        </table>
+    </div>
+</div>

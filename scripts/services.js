@@ -11,7 +11,7 @@ var bidReportsAppServices = angular.module('bidReportsAppServices', [])
                    type: "GET",
                    dataType: "json",
                    contentType: "application/json",
-                   url: '../../organisationUnits/'+id+".json?fields=id,name,programs[id,name,programStages]",
+                   url: '../../organisationUnits/'+id+".json?fields=id,name,level,programs[id,name,programStages]",
                    success: function (data) {
                        def.resolve(data);
                    }
@@ -332,6 +332,24 @@ var bidReportsAppServices = angular.module('bidReportsAppServices', [])
                     }
                 });
                 return def.promise;
+            }
+        }
+    })
+    .service('sqlViewService', function () {
+
+        return {
+            executeSqlView : function(uid,params){
+                var def = $.Deferred();
+                $.ajax({
+                    type: "GET",
+                    dataType: "json",
+                    contentType: "application/json",
+                    url: '../../sqlViews/'+uid+"/data.json?"+params,
+                    success: function (data) {
+                        def.resolve(data);
+                    }
+                });
+                return def;
             }
         }
     })

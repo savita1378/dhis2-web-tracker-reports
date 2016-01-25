@@ -23,6 +23,9 @@ var bidReportsApp = angular.module('bidReportsApp',['ui.bootstrap',
         }).when('/schedule-today', {
             templateUrl:'views/schedule-today.html',
             controller: 'TodayScheduleController'
+        }).when('/stock-balance', {
+            templateUrl:'views/stock-balance.html',
+            controller: 'StockBalanceController'
         }).otherwise({
             redirectTo : '/'
         });
