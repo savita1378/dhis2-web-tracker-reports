@@ -10,5 +10,7 @@ bidReportsApp.controller('LeftBarMenuController',
         $scope.showStockBalance = function () {
             $location.path('/stock-balance').search();
         };
-
+        $scope.showScheduledVaccines = function () {
+            $location.path('/scheduled-vaccines').search();
+        };
     });

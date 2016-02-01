@@ -3,8 +3,12 @@
  */
 
 bidReportsApp
-.controller('homeController', function( $rootScope,
-                                         $scope){
+.controller('HomeController', function( $rootScope,
+                                         $scope,
+                                        $location){
 
 
+        $scope.openReport = function(template){
+            $location.path('/'+template).search();
+        }
     });

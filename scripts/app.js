@@ -19,13 +19,16 @@ var bidReportsApp = angular.module('bidReportsApp',['ui.bootstrap',
 .config(function($routeProvider,$translateProvider){
         $routeProvider.when('/', {
             templateUrl:'views/home.html',
-            controller: 'homeController'
+            controller: 'HomeController'
         }).when('/schedule-today', {
             templateUrl:'views/schedule-today.html',
             controller: 'TodayScheduleController'
         }).when('/stock-balance', {
-            templateUrl:'views/stock-balance.html',
-            controller: 'StockBalanceController'
+            templateUrl:'views/stock-balance-bid.html',
+            controller: 'StockController'
+        }).when('/scheduled-vaccines', {
+            templateUrl:'views/scheduled-vaccine.html',
+            controller: 'ScheduledVaccinesController'
         }).otherwise({
             redirectTo : '/'
         });

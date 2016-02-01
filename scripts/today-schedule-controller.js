@@ -95,6 +95,8 @@ bidReportsApp
         }
 
         $scope.generateReport = function () {
+            totalRuleTime=0;TotalEventsByTEITime=0;TotalTEITime=0;TotalEnrollmentTime=0;
+        reportStartTime = window.performance.now();
 
             $scope.programRulesLoadingPromise.then(function(response){
                 if (response == "Done"){
@@ -110,7 +112,6 @@ bidReportsApp
             $scope.loading = true;
 
             prepareReportTemplate();
-                       
 
             $scope.TEIMap = [];
             MetadataService.getEventsByProgramStageAndOU($scope.selectedProgramStage.id,$scope.selectedOrgUnit.id,$scope.selectedOuMode.name).then(function (events) {
@@ -135,6 +136,15 @@ bidReportsApp
 
                         calculateTotals();
                         $scope.loading = false;
+                        reportEndTime = window.performance.now();
+                        console.log("report generationtime"+(reportEndTime - reportStartTime))
+                        console.log("TotalEventsByTEITime"+TotalEventsByTEITime)
+                        console.log("TotalTEITime"+TotalTEITime)
+                        console.log("TotalEnrollmentTime"+TotalEnrollmentTime)
+
+
+                        console.log("totalruletime"+totalRuleTime)
+
                         return
                     }
 
@@ -155,21 +165,30 @@ bidReportsApp
                     $scope.reportEventsMap[eventId].prstDeDes = $scope.programStageDeDesMap[$scope.events[eventCount].programStage];
 
                     $scope.prstDesMap = utilityService.prepareIdToObjectMap($scope.reportEventsMap[eventId].prstDeDes, "id");
-
+                    getTEITimeStart = window.performance.now();
                     //get TEI
                     MetadataService.getTEIByUID($scope.events[eventCount].trackedEntityInstance).then(function (TEI) {
+                        getTEITimeEnd = window.performance.now();
+                        TotalTEITime = TotalTEITime +(getTEITimeEnd - getTEITimeStart);
                         //   $scope.TEI = TEI;
                         $scope.reportEventsMap[eventId].TEI = TEI;
 
+                        getEnrollmentTimeStart = window.performance.now();
+
                         //get enrollment
                         MetadataService.getEnrollmentByUID($scope.events[eventCount].enrollment).then(function (enrollment) {
+                            getEnrollmentTimeEnd = window.performance.now();
+                            TotalEnrollmentTime = TotalEnrollmentTime +(getEnrollmentTimeEnd - getEnrollmentTimeStart);
+
                             //      $scope.enrollment = enrollment;
                             $scope.reportEventsMap[eventId].enrollment = enrollment;
 
+                            getEventsByTEITimeStart = window.performance.now();
 
                             // get events
                             MetadataService.getEventsByTEI($scope.events[eventCount].trackedEntityInstance).then(function (events) {
-
+                                getEventsByTEITimeEnd = window.performance.now();
+                                TotalEventsByTEITime = TotalEventsByTEITime +(getEventsByTEITimeEnd - getEventsByTEITimeStart);
                                 $scope.events[eventCount].eventDate = DateUtils.getToday();
                                 for (var count=0;count<events.length;count++){
 
@@ -213,7 +232,7 @@ bidReportsApp
 
                                 // All des are visible in the start
                                 $scope.reportEventsMap[eventId].prstDeDesValueMap=populateValue($scope.reportEventsMap[eventId].prstDeDes);
-
+                                executeRuleStart = window.performance.now();
                                 //run rules
                                 var rulesEffectResponse = TrackerRulesExecutionService.executeRulesBID(
                                     $scope.reportEventsMap[eventId].allProgramRules,
@@ -223,7 +242,9 @@ bidReportsApp
                                     $scope.reportEventsMap[eventId].TEI,
                                     $scope.reportEventsMap[eventId].enrollment,
                                     flag)
-
+                                exeuteRuleEnd = window.performance.now();
+                                totalRuleTime = totalRuleTime + (exeuteRuleEnd - executeRuleStart);
+                                console.log("exe_"+eventId + ":"+(exeuteRuleEnd - executeRuleStart))
                                 var rulesEffect = rulesEffectResponse.ruleeffects[rulesEffectResponse.event];
 
                                 //get map of data values of prstde from evs
@@ -273,7 +294,8 @@ bidReportsApp
                 runRulesForEvent(0);
             })
 
-        }
+
+            }
 
         $scope.showHideColumns = function(){
             var modalInstance = $modal.open({

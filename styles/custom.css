@@ -1,0 +1,41 @@
+#main-page
+{
+    margin: 65px 10px 10px 30px;
+}
+#header-page{
+    margin: 65px 5px 15px 35px;
+}
+#report-page
+{
+    margin: 5px 10px 20px 40px;
+}
+
+.bidTable th,td{
+    padding: 10px;
+    text-align: left;
+}
+
+.totals{
+    vertical-align : bottom;
+}
+.tableAttribute{
+    background-color: lightblue!important;
+}
+.tableDataElement{
+    background-color: burlywood!important;
+    width: 40px;
+    word-wrap: break-word;
+}
+.totalRow{
+    background-color: lavender!important;
+
+}
+.mergeWithBackground{
+    background-color : transparent!important;
+    border-left: transparent!important;
+    border-top: transparent!important;
+}
+.overDueRow{
+    color: indianred!important;
+
+}

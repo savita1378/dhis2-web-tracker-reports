@@ -1,0 +1,18 @@
+
+<div id="header-page">
+    <h2> Stock Balance Report <img ng-show="loading"  src="resources/images/loader-circle.GIF">
+ <span style="float:right">
+    <i>Facility</i> : <label>{{selectedOrgUnit.name}}</label>, <i>User</i> : <label>{{currentUser.displayName}}</label>
+</span></h2>
+</div>
+
+<div id="main-page" ng-show="showReport">
+        <table class=" bidTable dhis2-table-hover table-bordered dhis2-table-striped ">
+        <tr><th>S No</th><th ng-repeat="header in stockBalance.headers">{{header.name}}</th></tr>
+        <tr ng-repeat="row in stockBalance.rows">
+            <td>{{$index+1}}</td>
+            <td>{{row[0]}}</td>
+            <td>{{row[1]}}</td>
+        </tr>
+        </table>
+</div>

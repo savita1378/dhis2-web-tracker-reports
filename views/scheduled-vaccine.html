@@ -1,0 +1,29 @@
+
+<div id="header-page">
+<h2> Scheduled Vaccines Report <img ng-show="loading"  src="resources/images/loader-circle.GIF">
+ <span style="float:right">
+    <i>Facility</i> : <label>{{selectedOrgUnit.name}}</label>, <i>User</i> : <label>{{currentUser.displayName}}</label>
+</span></h2>
+
+
+</div>
+<div id="report-page">
+
+    <table class="bidTable dhis2-table-hover table-bordered dhis2-table-striped " ng-show="!loading">
+        <tr><th></th><th ng-repeat="header in reportTemplate.header"  ng-class="{'tableAttribute' :header.type == 'attribute','tableDataElement' :header.type == 'dataElement'}">{{header.name}}</th></tr>
+
+        <tr ng-repeat="event in reportEvents" ng-class="{'overDueRow' : event.event.isOverDue}">
+            <td>{{$index+1}}</td>
+            <td ng-repeat="header in reportTemplate.header" title="{{header.name}}">
+                <span ng-switch on="event.reportTEAPlusDeValueMap[header.id].value">
+                    <span ng-switch-when="hidden"></span>
+                    <span ng-switch-when="visible"><img height="33" width="33" src="resources/images/scheduled2.png"></span>
+                    <span ng-switch-when="true"><img height="33" width="33" src="resources/images/check.png"></span>
+                    <span ng-switch-default>{{event.reportTEAPlusDeValueMap[header.id].value }}</span>
+                </span>
+            </td>
+        </tr>
+
+    </table>
+
+</div>

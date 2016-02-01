@@ -1184,25 +1184,3 @@ input, button, select, textarea {
     cursor: default;
     width: 100%;
 }
-.totals{
-    vertical-align : bottom;
-}
-.tableAttribute{
-    background-color: lightblue!important;
-}
-.tableDataElement{
-    background-color: burlywood!important;
-}
-.totalRow{
-    background-color: lavender!important;
-
-}
-.mergeWithBackground{
-    background-color : transparent!important;
-    border-left: transparent!important;
-    border-top: transparent!important;
-}
-.overDueRow{
-    color: indianred!important;
-
-}

@@ -37,7 +37,7 @@ var bidReportsAppServices = angular.module('bidReportsAppServices', [])
                    type: "GET",
                    dataType: "json",
                    contentType: "application/json",
-                   url: '../../events.json?skipPaging=true&programStage='+programStage+'&orgUnit='+ouId+'&ouMode='+ouMode,
+                   url: '../../events.json?skipPaging=true&programStage='+programStage+'&orgUnit='+ouId+'&ouMode='+ouMode+'&status=SCHEDULE',
                    success: function (data) {
                        def.resolve(data.events);
                    }
@@ -104,7 +104,8 @@ var bidReportsAppServices = angular.module('bidReportsAppServices', [])
                    }
                });
                return def.promise;
-           }, getProgramRuleVariablesByProgram : function(programUid){
+           },
+           getProgramRuleVariablesByProgram : function(programUid){
                //var roles = SessionStorageService.get('USER_ROLES');
                //var userRoles = roles && roles.userCredentials && roles.userCredentials.userRoles ? roles.userCredentials.userRoles : [];
                //var ou = SessionStorageService.get('SELECTED_OU');
@@ -257,6 +258,20 @@ var bidReportsAppServices = angular.module('bidReportsAppServices', [])
                    }
                });
                return def.promise;
+           },
+           getProgram : function(UID){
+
+               var def = $q.defer();
+               $.ajax({
+                   type: "GET",
+                   dataType: "json",
+                   contentType: "application/json",
+                   url: '../../programs/'+UID+".json?fields=id,name,programStages[*],programTrackedEntityAttributes[trackedEntityAttribute[id,displayName]]",
+                   success: function (data) {
+                       def.resolve(data);
+                   }
+               });
+               return def.promise;
            }
        }
     })
@@ -276,6 +291,13 @@ var bidReportsAppServices = angular.module('bidReportsAppServices', [])
 
                 for (var i=0;i<object.length;i++){
                     map[object[i].dataElement.id] = object[i];
+                }
+                return map;
+            },
+            prepareIdToValueMap: function(object,id,value){
+                var map = [];
+                for (var i=0;i<object.length;i++){
+                    map[object[i][id]] = value;
                 }
                 return map;
             }
@@ -325,7 +347,7 @@ var bidReportsAppServices = angular.module('bidReportsAppServices', [])
                     type: "GET",
                     dataType: "json",
                     contentType: "application/json",
-                    url: '../../me.json?',
+                    url: '../../me.json?fields=id,displayName,organisationUnits[id,name,level]',
                     success: function (data) {
 
                         def.resolve(data);

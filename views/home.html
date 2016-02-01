@@ -1,10 +1,16 @@
 
-<div id="leftBar">
-    <d2-left-bar></d2-left-bar>
 
-</div>
-<div id="mainPage">
-    <h2>Welcome to BID Reports App</h2>
+<div id="main-page" ng-controller="HomeController">
 
-    Choose your report from the left bar.
+    <h1>BID Reports App</h1>
+    <div style="width: 90%;" class="row col-sm-12">
+        <div class="col-md-6 report-type-container" ng-click="openReport('scheduled-vaccines');">
+            <h2>Scheduled Vaccines</h2>
+        </div>
+        <div class="col-md-6 report-type-container" ng-click="openReport('stock-balance');">
+            <h2>Stock Balance </h2>
+        </div>
+
+    </div>
+
 </div>
