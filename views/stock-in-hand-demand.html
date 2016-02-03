@@ -1,0 +1,29 @@
+
+<div id="header-page">
+    <h2> Stock In-Hand Vs Demand  <img ng-show="loading" height="22" src="resources/images/loader-circle.GIF">
+ <span style="float:right">
+    <i>Facility</i> : <label>{{selectedOrgUnit.name}}</label>, <i>User</i> : <label>{{currentUser.displayName}}</label>
+</span></h2>
+
+    <br><b>
+    <label>Demand - For next : </label><br>
+    <input type="radio" ng-model="Days" value="1" ng-click="generateDemandReport()"> 1 Day
+    <input type="radio" ng-model="Days" value="3" ng-click="generateDemandReport()"> 3 Day
+    <input type="radio" ng-model="Days" value="7" ng-click="generateDemandReport()"> A Week
+    <input type="radio" ng-model="Days" value="14" ng-click="generateDemandReport()"> 2 Weeks
+    <input type="radio" ng-model="Days" value="60" ng-click="generateDemandReport()"> 2 Months
+</b>
+</div>
+
+    <div id="main-page" ng-show="!loading">
+        <table class=" bidTable dhis2-table-hover table-bordered dhis2-table-striped ">
+
+        <tr><th>#</th><th ng-repeat="templateItem in template">{{templateItem.name}}</th></tr>
+        <tr><th>Demand</th>
+            <td ng-repeat="templateItem in template">{{templateItem.demand}}</td></tr>
+        <tr><th>In Hand</th>
+            <td ng-repeat="templateItem in template">{{templateItem.balance}}</td></tr>
+
+        </table>
+
+</div>

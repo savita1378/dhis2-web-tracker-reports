@@ -16,10 +16,23 @@ function($scope,
     const ProgramStageUID = "s53RFfXA75f";
     const OuMode = "SELECTED";
     const de = [
-                {id:"bpBUOvqy1Jn", groupby :"BCG"},
-                {id:"EMcT5j5zR81", groupby :"BCG"},
-                {id:"KRF40x6EILp", groupby :"BCG"},
-                {id:"no7SkAxepi7", groupby :"BCG"}
+        {id:"bpBUOvqy1Jn", groupby :"BCG" ,name:"BCG"},
+        {id:"EMcT5j5zR81", groupby :"BCG" ,name:"BCG scar"},
+        {id:"KRF40x6EILp", groupby :"BCG" ,name:"BCG repeat dose"},
+        {id:"no7SkAxepi7", groupby :"OPV" ,name:"OPV 0"},
+        {id:"CfPM8lsEMzH", groupby :"OPV" ,name:"OPV 1"},
+        {id:"K3TcJM1ySQA", groupby :"DPT" ,name:"DPT-HepB-Hib1"},
+        {id:"fmXCCPENnwR", groupby :"PCV" ,name:"PCV 1"},
+        {id:"nIqQYeSwU9E", groupby :"RV" ,name:"RV 1"},
+        {id:"sDORmAKh32v", groupby :"OPV" ,name:"OPV 2"},
+        {id:"PvHUllrtPiy", groupby :"PCV" ,name:"PCV 2"},
+        {id:"wYg2gOWSyJG", groupby :"RV" ,name:"RV 2"},
+        {id:"nQeUfqPjK5o", groupby :"OPV" ,name:"OPV 3"},
+        {id:"pxCZNoqDVJC", groupby :"DPT" ,name:"DPT-HepB-Hib3"},
+        {id:"B4eJCy6LFLZ", groupby :"PCV" ,name:"PCV 3"},
+        {id:"cNA9EmFaiAa", groupby :"OPV" ,name:"OPV 4"},
+        {id:"g8dMiUOTFla", groupby :"Measles" ,name:"Measles 1"},
+        {id:"Bxh1xgIY9nA", groupby :"Measles" ,name:"Measles 2"}
                 ];
 
     const attr = [  "sB1IHYu2xQT",
@@ -48,7 +61,6 @@ function($scope,
             $scope.currentUser = currentUser;
             $scope.selectedOrgUnit = currentUser.organisationUnits[0];
             $scope.selectedOrgUnitUID = currentUser.organisationUnits[0].id;
-            $scope.selectedOrgUnitUID = "DQjaNvP9ulw";
 
             // Get Events which are scheduled
             promise = MetadataService.getEventsByProgramStageAndOU(ProgramStageUID,$scope.selectedOrgUnitUID,OuMode);
@@ -56,32 +68,34 @@ function($scope,
 
             track.notify();
             promise.then(function (events) {
-                track.notify()
+                track.notify();
 
                 $scope.events = events;
 
-                //collect TEI,Enrollment
-                //get all TEIs
-                var m1 = new pipeline(0,35,$scope.events.length,fetchTEIs);
-                m1.run();
-                track.push();
-                m1.done.then(function(data){
-                    track.notify();
-                });
+                if (events.length > 0) {
+                    //collect TEI,Enrollment
+                    //get all TEIs
+                    var m1 = new pipeline(0, 35, $scope.events.length, fetchTEIs);
+                    m1.run();
+                    track.push();
+                    m1.done.then(function (data) {
+                        track.notify();
+                    });
 
-                var m2 = new pipeline(0,35,$scope.events.length,fetchEnrollments);
-                m2.run();
-                track.push();
-                m2.done.then(function(data){
-                    track.notify();
-                });
+                    var m2 = new pipeline(0, 35, $scope.events.length, fetchEnrollments);
+                    m2.run();
+                    track.push();
+                    m2.done.then(function (data) {
+                        track.notify();
+                    });
 
-                var m3 = new pipeline(0,35,$scope.events.length,fetchEvents);
-                m3.run();
-                track.push();
-                m3.done.then(function(data){
-                    track.notify();
-                });
+                    var m3 = new pipeline(0, 35, $scope.events.length, fetchEvents);
+                    m3.run();
+                    track.push();
+                    m3.done.then(function (data) {
+                        track.notify();
+                    });
+                }
             })
         })
 

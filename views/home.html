@@ -3,13 +3,23 @@
 <div id="main-page" ng-controller="HomeController">
 
     <h1>BID Reports App</h1>
+
     <div style="width: 90%;" class="row col-sm-12">
         <div class="col-md-6 report-type-container" ng-click="openReport('scheduled-vaccines');">
-            <h2>Scheduled Vaccines</h2>
+            <h2>Scheduled Vaccines for Today</h2>
+            Who could come today and for which vaccine?
         </div>
-        <div class="col-md-6 report-type-container" ng-click="openReport('stock-balance');">
-            <h2>Stock Balance </h2>
+
+        <div class="col-md-6 report-type-container" ng-click="openReport('stock-in-hand');">
+        <h2>Stock In Hand </h2>
+            How much stock do we have in hand?
         </div>
+
+        <div class="col-md-6 report-type-container" ng-click="openReport('stock-analysis');">
+            <h2>Stock In Hand vs Demand </h2>
+            Comparison of Stock Balance with Demand
+        </div>
+
 
     </div>
 

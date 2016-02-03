@@ -14,6 +14,7 @@ var bidReportsApp = angular.module('bidReportsApp',['ui.bootstrap',
     'angularLocalStorage',
     'pascalprecht.translate',
     'bidReportsAppServices'
+
 ])
 
 .config(function($routeProvider,$translateProvider){
@@ -23,12 +24,15 @@ var bidReportsApp = angular.module('bidReportsApp',['ui.bootstrap',
         }).when('/schedule-today', {
             templateUrl:'views/schedule-today.html',
             controller: 'TodayScheduleController'
-        }).when('/stock-balance', {
-            templateUrl:'views/stock-balance-bid.html',
+        }).when('/stock-analysis', {
+            templateUrl:'views/stock-in-hand-demand.html',
             controller: 'StockController'
         }).when('/scheduled-vaccines', {
             templateUrl:'views/scheduled-vaccine.html',
             controller: 'ScheduledVaccinesController'
+        }).when('/stock-in-hand', {
+            templateUrl:'views/stock-in-hand.html',
+            controller: 'StockInHandController'
         }).otherwise({
             redirectTo : '/'
         });
@@ -36,4 +40,6 @@ var bidReportsApp = angular.module('bidReportsApp',['ui.bootstrap',
         $translateProvider.preferredLanguage('en');
         $translateProvider.useSanitizeValueStrategy('escaped');
         $translateProvider.useLoader('i18nLoader');
+
     })
+

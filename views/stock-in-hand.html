@@ -1,0 +1,20 @@
+
+<div id="header-page">
+
+
+    <h2> Stock In Hand <img ng-show="loading" height="22" src="resources/images/loader-circle.GIF">
+ <span style="float:right">
+    <i>Facility</i> : <label>{{selectedOrgUnit.name}}</label>, <i>User</i> : <label>{{currentUser.displayName}}</label>
+</span></h2>
+</div>
+
+<div id="main-page" ng-show="!loading">
+        <table class=" bidTable dhis2-table-hover table-bordered dhis2-table-striped ">
+
+        <tr><th>#</th><th ng-repeat="templateItem in template">{{templateItem.name}}</th></tr>
+        <tr><th>In Hand</th>
+            <td ng-repeat="templateItem in template">{{templateItem.balance}}</td></tr>
+
+        </table>
+    
+</div>

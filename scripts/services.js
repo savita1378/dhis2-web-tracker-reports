@@ -300,6 +300,12 @@ var bidReportsAppServices = angular.module('bidReportsAppServices', [])
                     map[object[i][id]] = value;
                 }
                 return map;
+            },
+            populateValue: function(object,id,value){
+                for (var i=0;i<object.length;i++){
+                    object[i][id] = value;
+                }
+                return object;
             }
         }
     })
