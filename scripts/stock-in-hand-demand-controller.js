@@ -17,7 +17,9 @@ bidReportsApp
                                                     ) {
 
         /* HARDCODE PARAMETERS */
-        const sqlViewSelected = /*"Y52YnK869WO";*/"sjOobMQc3g4";
+        //const sqlViewSelected = "Y52YnK869WO";/*"sjOobMQc3g4"*/;
+        const sqlViewSelected = "sjOobMQc3g4";
+
         const sqlViewChildren = "lTqNF1rWha3";
         const sqlViewDescendent = "CraSsUTG2aw";
 
@@ -108,12 +110,19 @@ bidReportsApp
         $scope.groupToTemplateObjectMap = utilityService.prepareIdToObjectMap($scope.template,"group");
 
         $scope.Days = 60;
+        var performance = new Performance();
         /* End */
 
-
+/*********    START OF ACTION    */
+        performance.start("ajax");
         _fetchMetaData().then(function(){
+            performance.stop("ajax");
+            performance.start("report");
             _prepareStockBalanceReport();
             _prepareStockDemandReport();
+            performance.stop("report");
+            console.log(performance.timeTaken("ajax"),performance.timeTaken("report"));
+            prepareToMakeChart();
         });
 
         $scope.generateDemandReport = function (){
@@ -415,6 +424,86 @@ bidReportsApp
                 $scope.groupToTemplateObjectMap[de.groupby].demand = $scope.groupToTemplateObjectMap[de.groupby].demand + value;
             }
         }
+        function prepareToMakeChart(){
+            var data = {
+                max : 0,
+                values : []
+            };
+
+            //var data = {
+            //    max : [2,2,2,2],
+            //    header:["a","b","c","d"],
+            //    values : [[1,2,3,4],
+            //        [       ]]
+            //};
+            for (var i=0;i<$scope.template.length;i++){
+                if (data.max < $scope.template[i].balance)
+                data.max = $scope.template[i].balance;
+
+                if (data.max < $scope.template[i].demand)
+                    data.max = $scope.template[i].demand;
+
+                data.values.push({type:"demand",value:$scope.template[i].demand});
+                data.values.push({type:"balance",value:$scope.template[i].balance});
+            }
+
+            makeChart(data);
+        }
+        function makeChart(data){
+            var x = d3.scale.sqrt()
+                .domain([0, d3.max(data.max)])
+                .range([0, 20]);
+
+            //Width and height
+            var w = 500;
+            var h = parseInt(data.max);
+
+            //Create SVG element
+            var svg = d3.select("#chart")
+                .append("svg")
+                .attr("width", w)
+                .attr("height", h);
+
+            svg.selectAll("rect")
+                .data(data.values)
+                .enter()
+                .append("rect")
+                .attr("x", function(d,i){
+                    return w/data.values.length*i;
+                })
+                .attr("y", function(d){
+                    return (h - (d.value));
+                })
+                .attr("width", 20)
+                .attr("height", function(d){
+                    return (d.value);
+                })
+                .attr("fill", function (d) {
+                    switch (d.type) {
+                        case "demand" :
+                            return "teal";
+                        case "balance" :
+                            return "red";
+                    }
+                });
+
+
+var test = [];
+            //d3.select("#chart")
+            //    .selectAll("div")
+            //    .data(data.values)
+            //    .enter().append("div")
+            //    .attr("class",function(d){
+            //        test.push({d:d.value,v:x(d.value)});
+            //        switch(d.type){
+            //            case "demand" : return "bar1";
+            //            case "balance" : return "bar2";
+            //        }
+            //    })
+            //    .style("height", function(d) { return x(d.value) + "px"; })
+            ;
+            console.log(test);
+        }
         /* Functions */
         function _fetchMetaData(){
 
@@ -442,7 +531,6 @@ bidReportsApp
 
                 track.notify();
                 promise.then(function (events) {
-                    track.notify()
 
                     $scope.events = events;
 
@@ -469,6 +557,7 @@ bidReportsApp
                             track.notify();
                         });
                     }
+                    track.notify()
                 })
             })
 

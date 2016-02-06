@@ -17,7 +17,7 @@ bidReportsApp
                                                     ) {
 
         /* HARDCODE PARAMETERS */
-        const sqlViewSelected = /*"Y52YnK869WO";*/"sjOobMQc3g4";
+        const sqlViewSelected = "Y52YnK869WO";/*"sjOobMQc3g4"*/;
         const sqlViewChildren = "lTqNF1rWha3";
         const sqlViewDescendent = "CraSsUTG2aw";
 

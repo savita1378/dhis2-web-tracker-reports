@@ -6,7 +6,7 @@
 </span></h2>
 
     <br><b>
-    <label>Demand - For next : </label><br>
+    <label>Demand - Uptill next : </label><br>
     <input type="radio" ng-model="Days" value="1" ng-click="generateDemandReport()"> 1 Day
     <input type="radio" ng-model="Days" value="3" ng-click="generateDemandReport()"> 3 Day
     <input type="radio" ng-model="Days" value="7" ng-click="generateDemandReport()"> A Week
@@ -16,6 +16,7 @@
 </div>
 
     <div id="main-page" ng-show="!loading">
+        <div id="chart"></div>
         <table class=" bidTable dhis2-table-hover table-bordered dhis2-table-striped ">
 
         <tr><th>#</th><th ng-repeat="templateItem in template">{{templateItem.name}}</th></tr>
