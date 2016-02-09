@@ -336,7 +336,7 @@ bidReportsApp
         }
         function filterByDate(events,days){
             var today = new Date();
-            var futureDate = today.setDate(today.getDate() + days);
+            var futureDate = today.setDate(today.getDate() + parseInt(days));
             var filteredEvents = [];
             for (var i=0 ;i<events.length;i++){
                 if (new Date(events[i].dueDate) < futureDate)
@@ -430,6 +430,12 @@ bidReportsApp
                 values : []
             };
 
+            var data2 = {
+                matrix:[],
+                max:0,
+                xAxisLabels : []
+            }; data2.matrix[0] = []; data2.matrix[1] = [];
+
             //var data = {
             //    max : [2,2,2,2],
             //    header:["a","b","c","d"],
@@ -437,73 +443,24 @@ bidReportsApp
             //        [       ]]
             //};
             for (var i=0;i<$scope.template.length;i++){
-                if (data.max < $scope.template[i].balance)
-                data.max = $scope.template[i].balance;
+                if (data2.max < $scope.template[i].balance)
+                    data2.max = $scope.template[i].balance;
 
-                if (data.max < $scope.template[i].demand)
-                    data.max = $scope.template[i].demand;
+                if (data2.max < $scope.template[i].demand)
+                    data2.max = $scope.template[i].demand;
 
                 data.values.push({type:"demand",value:$scope.template[i].demand});
                 data.values.push({type:"balance",value:$scope.template[i].balance});
+
+                data2.matrix[0].push($scope.template[i].demand);
+                data2.matrix[1].push(parseInt($scope.template[i].balance));
+
+                data2.xAxisLabels.push($scope.template[i].name);
             }
-
-            makeChart(data);
+            data2.legendLabels = ["Demand","In Hand"];
+            d3.makeChart(data2,400,700);
         }
-        function makeChart(data){
-            var x = d3.scale.sqrt()
-                .domain([0, d3.max(data.max)])
-                .range([0, 20]);
 
-            //Width and height
-            var w = 500;
-            var h = parseInt(data.max);
-
-            //Create SVG element
-            var svg = d3.select("#chart")
-                .append("svg")
-                .attr("width", w)
-                .attr("height", h);
-
-            svg.selectAll("rect")
-                .data(data.values)
-                .enter()
-                .append("rect")
-                .attr("x", function(d,i){
-                    return w/data.values.length*i;
-                })
-                .attr("y", function(d){
-                    return (h - (d.value));
-                })
-                .attr("width", 20)
-                .attr("height", function(d){
-                    return (d.value);
-                })
-                .attr("fill", function (d) {
-                    switch (d.type) {
-                        case "demand" :
-                            return "teal";
-                        case "balance" :
-                            return "red";
-                    }
-                });
-
-
-var test = [];
-            //d3.select("#chart")
-            //    .selectAll("div")
-            //    .data(data.values)
-            //    .enter().append("div")
-            //    .attr("class",function(d){
-            //        test.push({d:d.value,v:x(d.value)});
-            //        switch(d.type){
-            //            case "demand" : return "bar1";
-            //            case "balance" : return "bar2";
-            //        }
-            //    })
-            //    .style("height", function(d) { return x(d.value) + "px"; })
-            ;
-            console.log(test);
-        }
         /* Functions */
         function _fetchMetaData(){
 

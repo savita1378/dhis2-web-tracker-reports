@@ -15,6 +15,6 @@ var Performance = function(){
     }
 
     this.timeTaken = function(key){
-        return pointsMap[key].end - pointsMap[key].start
+        return pointsMap[key].end - pointsMap[key].start;
     }
 }
