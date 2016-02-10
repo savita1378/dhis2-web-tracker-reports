@@ -47,6 +47,7 @@ function($scope,
     $scope.EventsByTEIMap = [];
     $scope.programStageDeDesMap = [];
     $scope.loading = true;
+    $scope.showAlreadyGivenVaccines = false;
 /* End */
     /* Functions */
     _fetchMetaData = function(){
@@ -177,6 +178,9 @@ function($scope,
             var TEIUID = $scope.events[i].trackedEntityInstance;
             var enrollmentUID = $scope.events[i].enrollment;
 
+            if (TEIUID == "x4KZ0FtrMi2"){
+                debugger
+            }
             var sortedEvents = []
             var evs = $scope.EventsByTEIMap[TEIUID];
             sort(evs, sortedEvents);
@@ -199,7 +203,7 @@ function($scope,
 
 
             //get map of data values of prstde from evs
-            var deValueMapForEvent = getDeValueMap($scope.programStageDeDes,$scope.programStage.id,evs);
+           var deValueMapForEvent = getDeValueMap($scope.programStageDeDes,$scope.programStage.id,evs);
             reportDataEvent.prstDeDesValueMap =mergeMap(reportDataEvent.prstDeDesValueMap,deValueMapForEvent);
 
 
@@ -211,8 +215,11 @@ function($scope,
                         if (deValueMapForEvent[effect.dataElement.id]){
                             // value exists
                             reportDataEvent.prstDeDesValueMap[effect.dataElement.id] = deValueMapForEvent[effect.dataElement.id];
+                            reportDataEvent.prstDeDesValueMap[effect.dataElement.id] = deValueMapForEvent[effect.dataElement.id];
+
                         }
-                        else if (effect.action == "HIDEFIELD" && effect.ineffect) {
+                        else
+                        if (effect.action == "HIDEFIELD" && effect.ineffect) {
                             reportDataEvent.prstDeDesValueMap[effect.dataElement.id] = "hidden";
                         }
                     }
@@ -258,9 +265,11 @@ function($scope,
 
         if (!event.eventDate)
             event.eventDate = DateUtils.getToday();
+        //event.eventDate = undefined;
 
 
-        if (event.eventDate) {
+
+            if (event.eventDate) {
             event.sortingDate = event.eventDate;
         } else {
             event.sortingDate = event.dueDate;

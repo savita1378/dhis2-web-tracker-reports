@@ -187,6 +187,15 @@ var d2Services = angular.module('d2Services', ['ngResource'])
                 }
                 return moment(dateValue).format(dateFormat);
             },
+            formatToHrsMinsSecs: function (dateValue) {
+                var calendarSetting = CalendarService.getSetting();
+                var dateFormat = 'YYYY-MM-DD @ hh:mm:ss A';
+                if (calendarSetting.keyDateFormat === 'dd-MM-yyyy') {
+                    dateFormat = 'DD-MM-YYYY @ hh:mm:ss A';
+                }
+                return moment(dateValue).format(dateFormat);
+            },
+
             getToday: function () {
                 var calendarSetting = CalendarService.getSetting();
                 var tdy = $.calendars.instance(calendarSetting.keyCalendar).newDate();
@@ -262,23 +271,28 @@ var d2Services = angular.module('d2Services', ['ngResource'])
     })
 
     /* service for common utils */
-    .service('CommonUtils', function(DateUtils, OptionSetService){
+    .service('CommonUtils', function(DateUtils, OptionSetService, CurrentSelection, FileService){
 
         return {
-            formatDataValue: function(val, obj, optionSets, destination){
+            formatDataValue: function(event, val, obj, optionSets, destination){
+                var fileNames = CurrentSelection.getFileNames();
                 if(val &&
                     obj.valueType === 'NUMBER' ||
                     obj.valueType === 'INTEGER' ||
                     obj.valueType === 'INTEGER_POSITIVE' ||
                     obj.valueType === 'INTEGER_NEGATIVE' ||
                     obj.valueType === 'INTEGER_ZERO_OR_POSITIVE'){
-                    if( dhis2.validation.isNumber(val)  ){
-                        val = parseInt(val);
+                    if( dhis2.validation.isNumber(val)){
+                        if(obj.valueType === 'NUMBER'){
+                            val = parseFloat(val);
+                        }else{
+                            val = parseInt(val);
+                        }
                     }
                 }
                 if(val && obj.optionSetValue && obj.optionSet && obj.optionSet.id && optionSets[obj.optionSet.id].options  ){
                     if(destination === 'USER'){
-                        val = OptionSetService.getName(optionSets[obj.optionSet.id].options, val);
+                        val = OptionSetService.getName(optionSets[obj.optionSet.id].options, String(val));
                     }
                     else{
                         val = OptionSetService.getCode(optionSets[obj.optionSet.id].options, val);
@@ -302,7 +316,29 @@ var d2Services = angular.module('d2Services', ['ngResource'])
                         val = val === true ? 'true' : '';
                     }
                 }
+                if(event && val && destination === 'USER' && obj.valueType === 'FILE_RESOURCE'){
+                    FileService.get(val).then(function(response){
+                        if(response && response.name){
+                            if(!fileNames[event]){
+                                fileNames[event] = [];
+                            }
+                            fileNames[event][obj.id] = response.name;
+                            CurrentSelection.setFileNames( fileNames );
+                        }
+                    });
+                }
                 return val;
+            },
+            displayBooleanAsYesNo: function(value, dataElement){
+                if(angular.isUndefined(dataElement) || dataElement.valueType === "BOOLEAN"){
+                    if(value === "true" || value === true){
+                        return "Yes";
+                    }
+                    else if(value === "false" || value === false){
+                        return "No";
+                    }
+                }
+                return value;
             }
         };
     })
@@ -316,7 +352,6 @@ var d2Services = angular.module('d2Services', ['ngResource'])
                 var htmlCode = programStage.dataEntryForm ? programStage.dataEntryForm.htmlCode : null;
 
                 if (htmlCode) {
-
                     var inputRegex = /<input.*?\/>/g,
                         match,
                         inputFields = [],
@@ -328,6 +363,7 @@ var d2Services = angular.module('d2Services', ['ngResource'])
 
                     for (var i = 0; i < inputFields.length; i++) {
                         var inputField = inputFields[i];
+
                         var inputElement = $.parseHTML(inputField);
                         var attributes = {};
 
@@ -347,7 +383,7 @@ var d2Services = angular.module('d2Services', ['ngResource'])
                                     attributes['name'] = fieldId;
                                 }
 
-                                newInputField = '<input type="text" ' +
+                                newInputField = '<span class="hideInPrint"><input type="text" ' +
                                     this.getAttributesAsString(attributes) +
                                     ' ng-model="currentEvent.' + fieldId + '"' +
                                     ' input-field-id="' + fieldId + '"' +
@@ -357,7 +393,8 @@ var d2Services = angular.module('d2Services', ['ngResource'])
                                     ' placeholder="{{dhis2CalendarFormat.keyDateFormat}}" ' +
                                     ' ng-class="getInputNotifcationClass(prStDes.' + fieldId + '.dataElement.id,true)"' +
                                     ' blur-or-change="saveDatavalue(prStDes.' + fieldId + ')"' +
-                                    ' ng-required="{{true}}">';
+                                    ' class="input-with-audit"' +
+                                    ' ng-required="{{true}}"></span><span class="not-for-screen"><input type="text" value={{currentEvent.' + fieldId + '}}></span>';
                             }
                             else {
                                 fieldId = attributes['id'].substring(4, attributes['id'].length - 1).split("-")[1];
@@ -377,16 +414,18 @@ var d2Services = angular.module('d2Services', ['ngResource'])
                                         ' ng-disabled="isHidden(prStDes.' + fieldId + '.dataElement.id) || selectedEnrollment.status===\'CANCELLED\' || selectedEnrollment.status===\'COMPLETED\' || currentEvent[uid]==\'uid\' || currentEvent.editingNotAllowed"' +
                                         ' ng-required="{{prStDes.' + fieldId + '.compulsory}}" ';
 
+                                    var auditField = '<d2-audit is-audit-icon-present="inputObj.isAuditIconPresent" dataelement-id="{{prStDes.' + fieldId + '.dataElement.id}}" dataelement-name="{{prStDes[prStDes.' + fieldId + '.dataElement.id].dataElement.name}}" current-event="{{currentEvent.event}}"></d2-audit>';
                                     //check if dataelement has optionset
                                     if (prStDe.dataElement.optionSetValue) {
                                         var optionSetId = prStDe.dataElement.optionSet.id;
-                                        newInputField = '<ui-select style="width:100%;" theme="select2" ' + commonInputFieldProperty + ' on-select="saveDatavalue(prStDes.' + fieldId + ', outerForm.' + fieldId + ')" >' +
-                                            '<ui-select-match style="width:100%;" ng-class="getInputNotifcationClass(prStDes.' + fieldId + '.dataElement.id, true)" allow-clear="true" placeholder="' + $translate.instant('select_or_search') + '">{{$select.selected.name || $select.selected}}</ui-select-match>' +
+                                        newInputField = '<span class="hideInPrint"><ui-select style="width: 90%;" theme="select2" ' + commonInputFieldProperty + ' on-select="saveDatavalue(prStDes.' + fieldId + ', outerForm.' + fieldId + ')" >' +
+                                            '<ui-select-match ng-class="getInputNotifcationClass(prStDes.' + fieldId + '.dataElement.id, true)" allow-clear="true" placeholder="' + $translate.instant('select_or_search') + '">{{$select.selected.name || $select.selected}}</ui-select-match>' +
                                             '<ui-select-choices ' +
                                             ' repeat="option.name as option in optionSets.' + optionSetId + '.options | filter: $select.search | limitTo:maxOptionSize">' +
-                                            '<span ng-bind-html="option.name | highlight: $select.search"></span>' +
+                                            '<span ng-bind-html="option.name | highlight: $select.search">' +
+                                            '</span>' +
                                             '</ui-select-choices>' +
-                                            '</ui-select>';
+                                            '</ui-select></span><span class="not-for-screen"><input type="text" value={{currentEvent.' + fieldId + '}}></span>';
                                     }
                                     else {
                                         //check data element type and generate corresponding angular input field
@@ -395,46 +434,77 @@ var d2Services = angular.module('d2Services', ['ngResource'])
                                             prStDe.dataElement.valueType === "INTEGER_POSITIVE" ||
                                             prStDe.dataElement.valueType === "INTEGER_NEGATIVE" ||
                                             prStDe.dataElement.valueType === "INTEGER_ZERO_OR_POSITIVE") {
-                                            newInputField = '<input type="number" ' +
+                                            newInputField = '<span class="hideInPrint"><input type="number" ' +
                                                 ' d2-number-validator ' +
                                                 ' ng-class="{{getInputNotifcationClass(prStDes.' + fieldId + '.dataElement.id, true)}}" ' +
                                                 ' number-type="' + prStDe.dataElement.valueType + '" ' +
                                                 ' ng-blur="saveDatavalue(prStDes.' + fieldId + ', outerForm.' + fieldId + ')"' +
-                                                commonInputFieldProperty + ' >';
+                                                commonInputFieldProperty + '></span><span class="not-for-screen"><input type="text" value={{currentEvent.' + fieldId + '}}></span>';
                                         }
                                         else if (prStDe.dataElement.valueType === "BOOLEAN") {
-                                            newInputField = '<label class="radio-inline"><input type="radio" ng-change="saveDatavalue()" ' + commonInputFieldProperty + ' value="">{{\'no_value\'| translate}}</label>' +
-                                                '<label class="radio-inline"><input type="radio" ng-change="saveDatavalue()" ' + commonInputFieldProperty + ' value="true">{{\'yes\'| translate}}</label>' +
-                                                '<label class="radio-inline"><input type="radio" ng-change="saveDatavalue()" ' + commonInputFieldProperty + ' value="false">{{\'no\'| translate}}</label>';
+                                            newInputField = '<d2-radio-button ' +
+                                                ' dh-required="prStDes.' + fieldId + '.compulsory" ' +
+                                                ' dh-disabled="isHidden(prStDes.' + fieldId + '.dataElement.id) || selectedEnrollment.status===\'CANCELLED\' || selectedEnrollment.status===\'COMPLETED\' || currentEvent[uid]==\'uid\' || currentEvent.editingNotAllowed" ' +
+                                                ' dh-value="currentEvent.' + fieldId + '" ' +
+                                                ' dh-name="foo" ' +
+                                                ' dh-current-element="currentElement" ' +
+                                                ' dh-event="currentEvent.event" ' +
+                                                ' dh-id="prStDes.' + fieldId + '.dataElement.id" ' +
+                                                ' dh-click="saveDatavalue(prStDes.' + fieldId + ', currentEvent, value )"' +
+                                                ' </d2-radio-button>';
                                         }
                                         else if (prStDe.dataElement.valueType === "DATE") {
                                             var maxDate = prStDe.allowFutureDate ? '' : 0;
-                                            newInputField = '<input type="text" ' +
+                                            newInputField = '<span class="hideInPrint"><input type="text" ' +
                                                 ' placeholder="{{dhis2CalendarFormat.keyDateFormat}}" ' +
                                                 ' ng-class="{{getInputNotifcationClass(prStDes.' + fieldId + '.dataElement.id, true)}}" ' +
                                                 ' d2-date ' +
                                                 ' d2-date-validator ' +
                                                 ' max-date="' + maxDate + '"' +
                                                 ' blur-or-change="saveDatavalue(prStDes.' + fieldId + ', outerForm.' + fieldId + ')"' +
-                                                commonInputFieldProperty + ' >';
+                                                commonInputFieldProperty + ' ></span><span class="not-for-screen"><input type="text" value={{currentEvent.' + fieldId + '}}></span>';
                                         }
                                         else if (prStDe.dataElement.valueType === "TRUE_ONLY") {
-                                            newInputField = '<input type="checkbox" ' +
+                                            newInputField = '<span class="hideInPrint"><input type="checkbox" ' +
                                                 ' ng-class="{{getInputNotifcationClass(prStDes.' + fieldId + '.dataElement.id, true)}}" ' +
                                                 ' ng-change="saveDatavalue(prStDes.' + fieldId + ', outerForm.' + fieldId + ')"' +
-                                                commonInputFieldProperty + ' >';
+                                                commonInputFieldProperty + ' ></span><span class="not-for-screen"><input type="checkbox" ng-checked={{currentEvent.' + fieldId + '}}></span>';
                                         }
                                         else if (prStDe.dataElement.valueType === "LONG_TEXT") {
-                                            newInputField = '<textarea row ="3" ' +
+                                            newInputField = '<span class="hideInPrint"><textarea row="3" ' +
                                                 ' ng-class="{{getInputNotifcationClass(prStDes.' + fieldId + '.dataElement.id, true)}}" ' +
                                                 ' ng-blur="saveDatavalue(prStDes.' + fieldId + ', outerForm.' + fieldId + ')"' +
-                                                commonInputFieldProperty + '></textarea>';
+                                                commonInputFieldProperty + '></textarea></span><span class="not-for-screen"><textarea row="3" value={{currentEvent.' + fieldId + '}}></textarea></span>';
+                                        }
+                                        else if (prStDe.dataElement.valueType === "FILE_RESOURCE") {
+                                            newInputField = '<span class="input-group">\n\
+                                                            <span ng-if="currentEvent.' + fieldId + '">\n\
+                                                                <a href ng-click="downloadFile(null, \'' + fieldId + '\', null)" title="fileNames[currentEvent.event][' + fieldId + ']" >{{fileNames[currentEvent.event][' + fieldId + '].length > 20 ? fileNames[currentEvent.event][' + fieldId + '].substring(0,20).concat(\'...\') : fileNames[currentEvent.event][' + fieldId + ']}}</a>\n\
+                                                            </span>\n\
+                                                            <span class="input-group-btn">\n\
+                                                                <span class="btn btn-primary btn-file">\n\
+                                                                    <span ng-if="currentEvent.' + fieldId + '" title="{{\'delete\' | translate}}" d2-file-input-name="fileNames[currentEvent.event][' + fieldId + ']" d2-file-input-delete="currentEvent.' + fieldId + '">\n\
+                                                                        <a href ng-click="deleteFile(\'' + fieldId + '\')"><i class="fa fa-trash alert-danger"></i></a>\n\
+                                                                    </span>\n\
+                                                                    <span ng-if="!currentEvent.' + fieldId + '" title="{{\'upload\' | translate}}" >\n\
+                                                                        <i class="fa fa-upload"></i>\n\
+                                                                        <input  type="file" \n\
+                                                                                ' + this.getAttributesAsString(attributes) + '\n\
+                                                                                input-field-id="' + fieldId + '"\n\
+                                                                                d2-file-input-ps="currentStage"\n\
+                                                                                d2-file-input="currentEvent"\n\
+                                                                                d2-file-input-current-name="currentFileNames"\n\
+                                                                                d2-file-input-name="fileNames">\n\
+                                                                    </span>\n\
+                                                                </span>\n\
+                                                            </span>\n\
+                                                        </span>';
                                         }
                                         else {
-                                            newInputField = '<input type="text" ' +
+                                            newInputField = '<span class="hideInPrint"><input type="text" ' +
                                                 ' ng-class="{{getInputNotifcationClass(prStDes.' + fieldId + '.dataElement.id, true)}}" ' +
                                                 ' ng-blur="saveDatavalue(prStDes.' + fieldId + ', outerForm.' + fieldId + ')"' +
-                                                commonInputFieldProperty + ' >';
+                                                commonInputFieldProperty + '></span><span class="not-for-screen"><input type="text" value={{currentEvent.' + fieldId + '}}></span>';
                                         }
                                     }
                                 }
@@ -446,6 +516,8 @@ var d2Services = angular.module('d2Services', ['ngResource'])
                                     DialogService.showDialog({}, dialogOptions);
                                     return;
                                 }
+
+                                newInputField += auditField;
                             }
                             newInputField = newInputField + ' <span ng-messages="outerForm.' + fieldId + '.$error" class="required" ng-if="interacted(outerForm.' + fieldId + ')" ng-messages-include="../dhis-web-commons/angular-forms/error-messages.html"></span>';
 
@@ -509,66 +581,76 @@ var d2Services = angular.module('d2Services', ['ngResource'])
                                 //check if attribute has optionset
                                 if (att.optionSetValue) {
                                     var optionSetId = att.optionSet.id;
-                                    newInputField = '<ui-select style="width:100%;" theme="select2" ' + commonInputFieldProperty + '  on-select="teiValueUpdated(selectedTei,\'' + attId + '\')" >' +
+                                    newInputField = '<span ng-controller="InputController"><ui-select theme="select2" ' + commonInputFieldProperty + '  on-select="teiValueUpdated(selectedTei,\'' + attId + '\')" >' +
                                         '<ui-select-match style="width:100%;" allow-clear="true" placeholder="' + $translate.instant('select_or_search') + '">{{$select.selected.name || $select.selected}}</ui-select-match>' +
                                         '<ui-select-choices ' +
                                         'repeat="option.name as option in optionSets.' + optionSetId + '.options | filter: $select.search | limitTo:maxOptionSize">' +
                                         '<span ng-bind-html="option.name | highlight: $select.search"></span>' +
                                         '</ui-select-choices>' +
-                                        '</ui-select>';
+                                        '</ui-select><d2-audit class="hideInPrint" is-audit-icon-present="inputObj.isAuditIconPresent" dataelement-id="'+att.id+'" dataelement-name="'+att.name+'" data-type="attribute" selected-tei-id={{selectedTei.trackedEntityInstance}}></d2-audit></span>';
                                 }
                                 else {
                                     //check attribute type and generate corresponding angular input field
                                     if (att.valueType === "NUMBER" ) {
-                                        newInputField = '<input type="number" ' +
+                                        newInputField = '<span  ng-controller="InputController"><input type="number" ng-class="{\'input-with-audit\':inputObj.isAuditIconPresent}"' +
                                             ' d2-number-validator ' +
                                             ' number-type="' + att.valueType + '" ' +
                                             ' ng-blur="teiValueUpdated(selectedTei,\'' + attId + '\')" ' +
-                                            commonInputFieldProperty + ' >';
+                                            commonInputFieldProperty + ' >' +
+                                            '<d2-audit class="hideInPrint" is-audit-icon-present="inputObj.isAuditIconPresent" dataelement-id="'+att.id+'" dataelement-name="'+att.name+'" data-type="attribute" selected-tei-id={{selectedTei.trackedEntityInstance}}></d2-audit>' +
+                                            '</span>';
                                     }
                                     else if (att.valueType === "BOOLEAN") {
-                                        newInputField = '<label class="radio-inline"><input type="radio" ng-change="teiValueUpdated(selectedTei,\'' + attId + '\')" ' + commonInputFieldProperty + ' value="">{{\'no_value\'| translate}}</label>' +
-                                            '<label class="radio-inline"><input type="radio" ng-change="teiValueUpdated(selectedTei,\'' + attId + '\')" ' + commonInputFieldProperty + ' value="true">{{\'yes\'| translate}}</label>' +
-                                            '<label class="radio-inline"><input type="radio" ng-change="teiValueUpdated(selectedTei,\'' + attId + '\')" ' + commonInputFieldProperty + ' value="false">{{\'no\'| translate}}</label>';
+                                        newInputField = '<d2-radio-button ' +
+                                            ' dh-required=" ' + (att.mandatory || att.unique) + '" ' +
+                                            ' dh-disabled="editingDisabled || isHidden(attributesById.' + attId + '.id) || ' + isTrackerAssociate + '"' +
+                                            ' dh-value="selectedTei.' + attId + '" ' +
+                                            ' dh-name="foo" ' +
+                                            ' dh-current-element="currentElement" ' +
+                                            ' dh-event="currentEvent.event" ' +
+                                            ' dh-id="' + attId + '" ' +
+                                            ' </d2-radio-button>';
                                     }
                                     else if (att.valueType === "DATE") {
-                                        newInputField = '<input  type="text" ' +
+                                        newInputField = '<span ng-controller="InputController"><input  type="text" ng-class="{\'input-with-audit\':inputObj.isAuditIconPresent}"' +
                                             ' placeholder="{{dhis2CalendarFormat.keyDateFormat}}" ' +
-                                            ' max-date="' + attMaxDate + '"' + '\'' +
+                                            ' max-date=" ' + attMaxDate + ' " ' +
                                             ' d2-date' +
                                             ' blur-or-change="teiValueUpdated(selectedTei,\'' + attId + '\')" ' +
-                                            commonInputFieldProperty + ' >';
+                                            commonInputFieldProperty + ' >'+
+                                            '<d2-audit class="hideInPrint" is-audit-icon-present="inputObj.isAuditIconPresent" dataelement-id="'+att.id+'" dataelement-name="'+att.name+'" data-type="attribute" selected-tei-id={{selectedTei.trackedEntityInstance}} ></d2-audit>'+
+                                            '</span>';
                                     }
                                     else if (att.valueType === "TRUE_ONLY") {
-                                        newInputField = '<input type="checkbox" ' +
+                                        newInputField = '<span><input type="checkbox" ' +
                                             ' ng-change="teiValueUpdated(selectedTei,\'' + attId + '\')" ' +
-                                            commonInputFieldProperty + ' >';
+                                            commonInputFieldProperty + ' ><d2-audit class="hideInPrint" dataelement-id="'+att.id+'" dataelement-name="'+att.name+'" data-type="attribute" selected-tei-id={{selectedTei.trackedEntityInstance}} ></d2-audit></span>';
                                     }
                                     else if (att.valueType === "EMAIL") {
-                                        newInputField = '<input type="email" ' +
+                                        newInputField = '<span ng-controller="InputController"><input type="email" ng-class="{\'input-with-audit\':inputObj.isAuditIconPresent}"' +
                                             ' ng-blur="teiValueUpdated(selectedTei,\'' + attId + '\')" ' +
-                                            commonInputFieldProperty + ' >';
+                                            commonInputFieldProperty + ' ><d2-audit class="hideInPrint" is-audit-icon-present="inputObj.isAuditIconPresent" dataelement-id="'+att.id+'" dataelement-name="'+att.name+'" data-type="attribute" selected-tei-id={{selectedTei.trackedEntityInstance}} ></d2-audit></span>';
                                     }
                                     else if (att.valueType === "TRACKER_ASSOCIATE") {
-                                        newInputField = '<input type="text" ' +
+                                        newInputField = '<span ng-controller="InputController"><input type="text" ng-class="{\'input-with-audit\':inputObj.isAuditIconPresent}"' +
                                             ' ng-blur="teiValueUpdated(selectedTei,\'' + attId + '\')" ' +
-                                            commonInputFieldProperty + ' >' +
-                                            '<a href ng-class="{true: \'disable-clicks\', false: \'\'} [editingDisabled]" ng-click="getTrackerAssociate(attributesById.' + attId + ', selectedTei.' + attId + ')" title="{{\'add\' | translate}} {{attributesById.' + attId + '.name}}" ' +
+                                            commonInputFieldProperty + ' ><d2-audit class="hideInPrint" is-audit-icon-present="inputObj.isAuditIconPresent" dataelement-id="'+att.id+'" dataelement-name="'+att.name+'" data-type="attribute" selected-tei-id={{selectedTei.trackedEntityInstance}} ></d2-audit></span>' +
+                                            '<span class="hideInPrint"><a href ng-class="{true: \'disable-clicks\', false: \'\'} [editingDisabled]" ng-click="getTrackerAssociate(attributesById.' + attId + ', selectedTei.' + attId + ')" title="{{\'add\' | translate}} {{attributesById.' + attId + '.name}}" ' +
                                             '<i class="fa fa-external-link fa-2x vertical-center"></i> ' +
                                             '</a> ' +
                                             '<a href ng-if="selectedTei.' + attId + '" ng-class="{true: \'disable-clicks\', false: \'\'} [editingDisabled]" ng-click="selectedTei.' + attId + ' = null" title="{{\'remove\' | translate}} {{attributesById.' + attId + '.name}}" ' +
                                             '<i class="fa fa-trash-o fa-2x vertical-center"></i> ' +
-                                            '</a>';
+                                            '</a></span>';
                                     }
                                     else if (att.valueType === "LONG_TEXT") {
-                                        newInputField = '<textarea row ="3" ' +
+                                        newInputField = '<span><textarea row ="3" ' +
                                             ' ng-blur="teiValueUpdated(selectedTei,\'' + attId + '\')" ' +
-                                            commonInputFieldProperty + ' >';
+                                            commonInputFieldProperty + ' ></textarea><d2-audit class="hideInPrint" dataelement-id="'+att.id+'" dataelement-name="'+att.name+'" data-type="attribute" selected-tei-id={{selectedTei.trackedEntityInstance}} ></d2-audit></span>';
                                     }
                                     else {
-                                        newInputField = '<input type="text" ' +
+                                        newInputField = '<span ng-controller="InputController"><input type="text" ' +
                                             ' ng-blur="teiValueUpdated(selectedTei,\'' + attId + '\')" ' +
-                                            commonInputFieldProperty + ' >';
+                                            commonInputFieldProperty + '><d2-audit class="hideInPrint" is-audit-icon-present="inputObj.isAuditIconPresent" dataelement-id="'+att.id+'" dataelement-name="'+att.name+'" data-type="attribute" selected-tei-id={{selectedTei.trackedEntityInstance}} ></d2-audit></span>';
                                     }
                                 }
                             }
@@ -588,7 +670,7 @@ var d2Services = angular.module('d2Services', ['ngResource'])
                             if (programId === 'enrollmentDate') {
                                 fieldName = 'dateOfEnrollment';
                                 var enMaxDate = trackedEntityForm.selectEnrollmentDatesInFuture ? '' : 0;
-                                newInputField = '<input type="text" ' +
+                                newInputField = '<span ng-controller="InputController"><input type="text" ng-class="{\'input-with-audit\':inputObj.isAuditIconPresent}"' +
                                     ' name="' + fieldName + '"' +
                                     ' element-id="' + i + '"' +
                                     this.getAttributesAsString(attributes) +
@@ -598,12 +680,12 @@ var d2Services = angular.module('d2Services', ['ngResource'])
                                     ' ng-disabled="\'' + target + '\' === \'PROFILE\'"' +
                                     ' d2-date' +
                                     ' max-date="' + enMaxDate + '"' +
-                                    ' ng-required="true"> ';
+                                    ' ng-required="true"><d2-audit class="hideInPrint" is-audit-icon-present="inputObj.isAuditIconPresent" dataelement-id="'+att.id+'" dataelement-name="'+att.name+'" data-type="attribute" selected-tei-id={{selectedTei.trackedEntityInstance}} ></d2-audit></span>';
                             }
                             if (programId === 'dateOfIncident' && trackedEntityForm.displayIncidentDate) {
                                 fieldName = 'dateOfIncident';
                                 var inMaxDate = trackedEntityForm.selectIncidentDatesInFuture ? '' : 0;
-                                newInputField = '<input type="text" ' +
+                                newInputField = '<span ng-controller="InputController"><input type="text" ng-class="{\'input-with-audit\':inputObj.isAuditIconPresent}"' +
                                     ' name="' + fieldName + '"' +
                                     ' element-id="' + i + '"' +
                                     this.getAttributesAsString(attributes) +
@@ -612,7 +694,7 @@ var d2Services = angular.module('d2Services', ['ngResource'])
                                     ' ng-model="selectedEnrollment.dateOfIncident" ' +
                                     ' ng-disabled="\'' + target + '\' === \'PROFILE\'"' +
                                     ' d2-date ' +
-                                    ' max-date="' + inMaxDate + '"> ';
+                                    ' max-date="' + inMaxDate + '"><d2-audit class="hideInPrint" is-audit-icon-present="inputObj.isAuditIconPresent" dataelement-id="'+att.id+'" dataelement-name="'+att.name+'" data-type="attribute" selected-tei-id={{selectedTei.trackedEntityInstance}} ></d2-audit></span>';
                             }
                         }
 
@@ -840,6 +922,40 @@ var d2Services = angular.module('d2Services', ['ngResource'])
         };
     })
 
+    /* Service for uploading/downloading file */
+    .service('FileService', function ($http) {
+
+        return {
+            get: function (uid) {
+                var promise = $http.get('../api/fileResources/' + uid).then(function (response) {
+                    return response.data;
+                });
+                return promise;
+            },
+            delete: function (uid) {
+                var promise = $http.get('../api/fileResources/' + uid).then(function (response) {
+                    return response.data;
+                });
+                return promise;
+            },
+            download: function (fileName) {
+                var promise = $http.get(fileName).then(function (response) {
+                    return response.data;
+                });
+                return promise;
+            },
+            upload: function(file){
+                var formData = new FormData();
+                formData.append('file', file);
+                var headers = {transformRequest: angular.identity, headers: {'Content-Type': undefined}};
+                var promise = $http.post('../api/fileResources', formData, headers).then(function(response){
+                    return response.data;
+                });
+                return promise;
+            }
+        };
+    })
+
     /* service for building variables based on the data in users fields */
     .service('VariableService', function(DateUtils,$filter,$log){
         var processSingleValue = function(processedValue,valueType){
@@ -908,7 +1024,6 @@ var d2Services = angular.module('d2Services', ['ngResource'])
                 programVariables = programVariables.concat(allProgramRules.programIndicators.variables);
 
                 angular.forEach(programVariables, function(programVariable) {
-
                     var dataElementId = programVariable.dataElement;
                     if(programVariable.dataElement && programVariable.dataElement.id) {
                         dataElementId = programVariable.dataElement.id;
@@ -1179,7 +1294,10 @@ var d2Services = angular.module('d2Services', ['ngResource'])
                     {name:"d2:ceil",parameters:1},
                     {name:"d2:round",parameters:1},
                     {name:"d2:hasValue",parameters:1},
-                    {name:"d2:lastEventDate",parameters:1}];
+                    {name:"d2:lastEventDate",parameters:1},
+                    {name:"d2:validatePattern",parameters:2},
+                    {name:"d2:addControlDigits",parameters:1},
+                    {name:"d2:checkControlDigits",parameters:1}];
                 var continueLooping = true;
                 //Safety harness on 10 loops, in case of unanticipated syntax causing unintencontinued looping
                 for(var i = 0; i < 10 && continueLooping; i++ ) {
@@ -1451,6 +1569,85 @@ var d2Services = angular.module('d2Services', ['ngResource'])
                                 expression = expression.replace(callToThisFunction, valueFound);
                                 successfulExecution = true;
                             }
+                            else if(dhisFunction.name === "d2:validatePattern") {
+                                var inputToValidate = parameters[0].toString();
+                                var pattern = parameters[1];
+                                var regEx = new RegExp(pattern,'g');
+                                var match = inputToValidate.match(regEx);
+
+                                var matchFound = false;
+                                if(match !== null && inputToValidate === match[0]) {
+                                    matchFound = true;
+                                }
+
+                                //Replace the end evaluation of the dhis function:
+                                expression = expression.replace(callToThisFunction, matchFound);
+                                successfulExecution = true;
+                            }
+                            else if(dhisFunction.name === "d2:addControlDigits") {
+
+                                var baseNumber = parameters[0];
+                                var baseDigits = baseNumber.split('');
+                                var error = false;
+
+
+                                var firstDigit = 0;
+                                var secondDigit = 0;
+
+                                if(baseDigits && baseDigits.length < 10 ) {
+                                    var firstSum = 0;
+                                    var baseNumberLength = baseDigits.length;
+                                    //weights support up to 9 base digits:
+                                    var firstWeights = [3,7,6,1,8,9,4,5,2];
+                                    for(var i = 0; i < baseNumberLength && !error; i++) {
+                                        firstSum += parseInt(baseDigits[i]) * firstWeights[i];
+                                    }
+                                    firstDigit = firstSum % 11;
+
+                                    //Push the first digit to the array before continuing, as the second digit is a result of the
+                                    //base digits and the first control digit.
+                                    baseDigits.push(firstDigit);
+                                    //Weights support up to 9 base digits plus first control digit:
+                                    var secondWeights = [5,4,3,2,7,6,5,4,3,2];
+                                    var secondSum = 0;
+                                    for(var i = 0; i < baseNumberLength + 1 && !error; i++) {
+                                        secondSum += parseInt(baseDigits[i]) * secondWeights[i];
+                                    }
+                                    secondDigit = secondSum % 11;
+
+                                    if(firstDigit === 10) {
+                                        $log.warn("First control digit became 10, replacing with 0");
+                                        firstDigit = 0;
+                                    }
+                                    if(secondDigit === 10) {
+                                        $log.warn("Second control digit became 10, replacing with 0");
+                                        secondDigit = 0;
+                                    }
+                                }
+                                else
+                                {
+                                    $log.warn("Base nuber not well formed(" + baseNumberLength + " digits): " + baseNumber);
+                                }
+
+                                if(!error) {
+                                    //Replace the end evaluation of the dhis function:
+                                    expression = expression.replace(callToThisFunction, baseNumber + firstDigit + secondDigit);
+                                    successfulExecution = true;
+                                }
+                                else
+                                {
+                                    //Replace the end evaluation of the dhis function:
+                                    expression = expression.replace(callToThisFunction, baseNumber);
+                                    successfulExecution = false;
+                                }
+                            }
+                            else if(dhisFunction.name === "d2:checkControlDigits") {
+                                $log.warn("checkControlDigits not implemented yet");
+
+                                //Replace the end evaluation of the dhis function:
+                                expression = expression.replace(callToThisFunction, parameters[0]);
+                                successfulExecution = false;
+                            }
                         });
                     });
 
@@ -1521,7 +1718,7 @@ var d2Services = angular.module('d2Services', ['ngResource'])
             var valArray = [];
             if(effect.data) {
                 valArray = effect.data.split(',');
-                var dataValues = [];
+                var newEventDataValues = [];
                 angular.forEach(valArray, function(value) {
                     var valParts = value.split(':');
                     if(valParts && valParts.length >= 1) {
@@ -1534,18 +1731,20 @@ var d2Services = angular.module('d2Services', ['ngResource'])
 
                         var processedValue = VariableService.processValue(valVal, valueType);
                         processedValue = $filter('trimquotes')(processedValue);
-                        dataValues.push({dataElement:valId,value:processedValue});
-                        dataValues[valId] = processedValue;
+                        newEventDataValues.push({dataElement:valId,value:processedValue});
+                        newEventDataValues[valId] = processedValue;
                     }
                 });
 
                 var valuesAlreadyExists = false;
                 angular.forEach(currentEvents, function(currentEvent) {
                     var misMatch = false;
-                    angular.forEach(dataValues, function(value) {
-                        if(currentEvent[value.dataElement] !== dataValues[value.dataElement]) {
-                            misMatch = true;
-                        }
+                    angular.forEach(newEventDataValues, function(value) {
+                        angular.forEach(currentEvent.dataValues, function(currentDataValue) {
+                            if(currentDataValue.dataElement === value.dataElement && currentDataValue.value != newEventDataValues[value.dataElement]) {
+                                misMatch = true;
+                            }
+                        });
                     });
                     if(!misMatch) {
                         //if no mismatches on this point, the exact same event already exists, and we dont create it.
@@ -1566,7 +1765,7 @@ var d2Services = angular.module('d2Services', ['ngResource'])
                         dueDate: dueDate,
                         eventDate: eventDate,
                         notes: [],
-                        dataValues: dataValues,
+                        dataValues: newEventDataValues,
                         status: 'ACTIVE',
                         event: dhis2.util.uid()
                     };
@@ -1588,20 +1787,20 @@ var d2Services = angular.module('d2Services', ['ngResource'])
         };
 
         return {
-            executeRules: function(allProgramRules, executingEvent, evs, allDataElements, selectedEntity, selectedEnrollment, flag ) {
-                if(allProgramRules) {
+            executeRules: function (allProgramRules, executingEvent, evs, allDataElements, selectedEntity, selectedEnrollment, flag) {
+                if (allProgramRules) {
                     var variablesHash = {};
 
                     //Concatenate rules produced by indicator definitions into the other rules:
                     var rules = $filter('filter')(allProgramRules.programRules, {programStageId: null});
 
-                    if(executingEvent.programStage){
-                        if(!rules) {
+                    if (executingEvent.programStage) {
+                        if (!rules) {
                             rules = [];
                         }
                         rules = rules.concat($filter('filter')(allProgramRules.programRules, {programStageId: executingEvent.programStage}));
                     }
-                    if(!rules) {
+                    if (!rules) {
                         rules = [];
                     }
                     rules = rules.concat(allProgramRules.programIndicators.rules);
@@ -1611,32 +1810,32 @@ var d2Services = angular.module('d2Services', ['ngResource'])
 
                     variablesHash = VariableService.getVariables(allProgramRules, executingEvent, evs, allDataElements, selectedEntity, selectedEnrollment);
 
-                    if(angular.isObject(rules) && angular.isArray(rules)){
+                    if (angular.isObject(rules) && angular.isArray(rules)) {
                         //The program has rules, and we want to run them.
                         //Prepare repository unless it is already prepared:
-                        if(angular.isUndefined( $rootScope.ruleeffects ) ) {
+                        if (angular.isUndefined($rootScope.ruleeffects)) {
                             $rootScope.ruleeffects = {};
                         }
 
                         var ruleEffectKey = executingEvent.event ? executingEvent.event : executingEvent;
-                        if( executingEvent.event && angular.isUndefined( $rootScope.ruleeffects[ruleEffectKey] )){
+                        if (executingEvent.event && angular.isUndefined($rootScope.ruleeffects[ruleEffectKey])) {
                             $rootScope.ruleeffects[ruleEffectKey] = {};
                         }
 
-                        if(!angular.isObject(executingEvent) && angular.isUndefined( $rootScope.ruleeffects[ruleEffectKey] )){
+                        if (!angular.isObject(executingEvent) && angular.isUndefined($rootScope.ruleeffects[ruleEffectKey])) {
                             $rootScope.ruleeffects[ruleEffectKey] = {};
                         }
 
                         var updatedEffectsExits = false;
                         var eventsCreated = 0;
 
-                        angular.forEach(rules, function(rule) {
+                        angular.forEach(rules, function (rule) {
                             var ruleEffective = false;
 
                             var expression = rule.condition;
                             //Go through and populate variables with actual values, but only if there actually is any replacements to be made(one or more "$" is present)
-                            if(expression) {
-                                if(expression.indexOf('{') !== -1) {
+                            if (expression) {
+                                if (expression.indexOf('{') !== -1) {
                                     expression = replaceVariables(expression, variablesHash);
                                 }
                                 //run expression:
@@ -1645,29 +1844,28 @@ var d2Services = angular.module('d2Services', ['ngResource'])
                                 $log.warn("Rule id:'" + rule.id + "'' and name:'" + rule.name + "' had no condition specified. Please check rule configuration.");
                             }
 
-                            angular.forEach(rule.programRuleActions, function(action){
+                            angular.forEach(rule.programRuleActions, function (action) {
                                 //In case the effect-hash is not populated, add entries
-                                if(angular.isUndefined( $rootScope.ruleeffects[ruleEffectKey][action.id] )){
-                                    $rootScope.ruleeffects[ruleEffectKey][action.id] =  {
-                                        id:action.id,
-                                        location:action.location,
-                                        action:action.programRuleActionType,
-                                        dataElement:action.dataElement,
-                                        trackedEntityAttribute:action.trackedEntityAttribute,
+                                if (angular.isUndefined($rootScope.ruleeffects[ruleEffectKey][action.id])) {
+                                    $rootScope.ruleeffects[ruleEffectKey][action.id] = {
+                                        id: action.id,
+                                        location: action.location,
+                                        action: action.programRuleActionType,
+                                        dataElement: action.dataElement,
+                                        trackedEntityAttribute: action.trackedEntityAttribute,
                                         programStage: action.programStage,
                                         programIndicator: action.programIndicator,
                                         programStageSection: action.programStageSection && action.programStageSection.id ? action.programStageSection.id : null,
-                                        content:action.content,
-                                        data:action.data,
-                                        ineffect:undefined
+                                        content: action.content,
+                                        data: action.data,
+                                        ineffect: undefined
                                     };
                                 }
 
                                 //In case the rule is effective and contains specific data,
                                 //the effect be refreshed from the variables list.
                                 //If the rule is not effective we can skip this step
-                                if(ruleEffective && action.data)
-                                {
+                                if (ruleEffective && action.data) {
                                     //Preserve old data for comparison:
                                     var oldData = $rootScope.ruleeffects[ruleEffectKey][action.id].data;
 
@@ -1675,15 +1873,13 @@ var d2Services = angular.module('d2Services', ['ngResource'])
                                     //To make a lookup in variables hash, we must make a lookup without the dollar sign in the variable name
                                     //The first strategy is to make a direct lookup. In case the "data" expression is more complex, we have to do more replacement and evaluation.
 
-                                    var nameWithoutBrackets = action.data.replace('#{','').replace('}','');
-                                    if(angular.isDefined(variablesHash[nameWithoutBrackets]))
-                                    {
+                                    var nameWithoutBrackets = action.data.replace('#{', '').replace('}', '');
+                                    if (angular.isDefined(variablesHash[nameWithoutBrackets])) {
                                         //The variable exists, and is replaced with its corresponding value
                                         $rootScope.ruleeffects[ruleEffectKey][action.id].data =
                                             variablesHash[nameWithoutBrackets].variableValue;
                                     }
-                                    else if(action.data.indexOf('{') !== -1 || action.data.indexOf('d2:') !== -1)
-                                    {
+                                    else if (action.data.indexOf('{') !== -1 || action.data.indexOf('d2:') !== -1) {
                                         //Since the value couldnt be looked up directly, and contains a curly brace or a dhis function call,
                                         //the expression was more complex than replacing a single variable value.
                                         //Now we will have to make a thorough replacement and separate evaluation to find the correct value:
@@ -1692,25 +1888,24 @@ var d2Services = angular.module('d2Services', ['ngResource'])
                                         $rootScope.ruleeffects[ruleEffectKey][action.id].data = runExpression($rootScope.ruleeffects[ruleEffectKey][action.id].data, action.data, "action:" + action.id, flag, variablesHash);
                                     }
 
-                                    if(oldData !== $rootScope.ruleeffects[ruleEffectKey][action.id].data) {
+                                    if (oldData !== $rootScope.ruleeffects[ruleEffectKey][action.id].data) {
                                         updatedEffectsExits = true;
                                     }
                                 }
 
                                 //Update the rule effectiveness if it changed in this evaluation;
-                                if($rootScope.ruleeffects[ruleEffectKey][action.id].ineffect !== ruleEffective)
-                                {
+                                if ($rootScope.ruleeffects[ruleEffectKey][action.id].ineffect !== ruleEffective) {
                                     //There is a change in the rule outcome, we need to update the effect object.
                                     updatedEffectsExits = true;
                                     $rootScope.ruleeffects[ruleEffectKey][action.id].ineffect = ruleEffective;
                                 }
 
                                 //In case the rule is of type CREATEEVENT, run event creation:
-                                if($rootScope.ruleeffects[ruleEffectKey][action.id].action === "CREATEEVENT" && $rootScope.ruleeffects[ruleEffectKey][action.id].ineffect){
-                                    if(evs && evs.byStage && evs.byStage[$rootScope.ruleeffects[ruleEffectKey]] && evs.byStage[$rootScope.ruleeffects[ruleEffectKey][action.id]])
-                                    {
-                                        if(evs.byStage[$rootScope.ruleeffects[ruleEffectKey][action.id].programStage]) {
-                                            eventsCreated += performCreateEventAction($rootScope.ruleeffects[ruleEffectKey][action.id], selectedEntity, selectedEnrollment, evs.byStage[$rootScope.ruleeffects[ruleEffectKey][action.id].programStage.id]);
+                                if ($rootScope.ruleeffects[ruleEffectKey][action.id].action === "CREATEEVENT" && $rootScope.ruleeffects[ruleEffectKey][action.id].ineffect) {
+                                    if (evs && evs.byStage) {
+                                        if ($rootScope.ruleeffects[ruleEffectKey][action.id].programStage) {
+                                            var createdNow = performCreateEventAction($rootScope.ruleeffects[ruleEffectKey][action.id], selectedEntity, selectedEnrollment, evs.byStage[$rootScope.ruleeffects[ruleEffectKey][action.id].programStage.id]);
+                                            eventsCreated += createdNow;
                                         } else {
                                             $log.warn("No programstage defined for CREATEEVENT action: " + action.id);
                                         }
@@ -1721,21 +1916,21 @@ var d2Services = angular.module('d2Services', ['ngResource'])
                                 }
                                 //In case the rule is of type "assign variable" and the rule is effective,
                                 //the variable data result needs to be applied to the correct variable:
-                                else if($rootScope.ruleeffects[ruleEffectKey][action.id].action === "ASSIGN" && $rootScope.ruleeffects[ruleEffectKey][action.id].ineffect){
+                                else if ($rootScope.ruleeffects[ruleEffectKey][action.id].action === "ASSIGN" && $rootScope.ruleeffects[ruleEffectKey][action.id].ineffect) {
                                     //from earlier evaluation, the data portion of the ruleeffect now contains the value of the variable to be assign.
                                     //the content portion of the ruleeffect defines the name for the variable, when dollar is removed:
                                     var variabletoassign = $rootScope.ruleeffects[ruleEffectKey][action.id].content ?
-                                        $rootScope.ruleeffects[ruleEffectKey][action.id].content.replace("#{","").replace("}","") : null;
+                                        $rootScope.ruleeffects[ruleEffectKey][action.id].content.replace("#{", "").replace("}", "") : null;
 
-                                    if((!variabletoassign || !angular.isDefined(variablesHash[variabletoassign])) && !$rootScope.ruleeffects[ruleEffectKey][action.id].dataElement){
+                                    if ((!variabletoassign || !angular.isDefined(variablesHash[variabletoassign])) && !$rootScope.ruleeffects[ruleEffectKey][action.id].dataElement) {
                                         $log.warn("Variable " + variabletoassign + " was not defined.");
                                     }
 
                                     var updatedValue = $rootScope.ruleeffects[ruleEffectKey][action.id].data;
 
                                     //Even if the variable is not defined: we assign it:
-                                    if(variablesHash[variabletoassign] &&
-                                        variablesHash[variabletoassign].variableValue !== updatedValue){
+                                    if (variablesHash[variabletoassign] &&
+                                        variablesHash[variabletoassign].variableValue !== updatedValue) {
                                         //If the variable was actually updated, we assume that there is an updated ruleeffect somewhere:
                                         updatedEffectsExits = true;
                                         //Then we assign the new value:
@@ -1744,12 +1939,12 @@ var d2Services = angular.module('d2Services', ['ngResource'])
                                         var processedValue = VariableService.processValue(updatedValue, valueType);
 
                                         variablesHash[variabletoassign] = {
-                                            variableValue:processedValue,
-                                            variableType:valueType,
-                                            hasValue:true,
-                                            variableEventDate:'',
-                                            variablePrefix:'#',
-                                            allValues:[processedValue]
+                                            variableValue: processedValue,
+                                            variableType: valueType,
+                                            hasValue: true,
+                                            variableEventDate: '',
+                                            variablePrefix: '#',
+                                            allValues: [processedValue]
                                         };
                                     }
                                 }
@@ -1757,28 +1952,31 @@ var d2Services = angular.module('d2Services', ['ngResource'])
                         });
 
                         //Broadcast rules finished if there was any actual changes to the event.
-                        if(updatedEffectsExits){
-                            $rootScope.$broadcast("ruleeffectsupdated", { event: ruleEffectKey, eventsCreated:eventsCreated });
+                        if (updatedEffectsExits) {
+                            $rootScope.$broadcast("ruleeffectsupdated", {
+                                event: ruleEffectKey,
+                                eventsCreated: eventsCreated
+                            });
                         }
                     }
 
                     return true;
                 }
             },
-            executeRulesBID: function(allProgramRules, executingEvent, evs, allDataElements, selectedEntity, selectedEnrollment, flag ) {
-                if(allProgramRules) {
+            executeRulesBID: function (allProgramRules, executingEvent, evs, allDataElements, selectedEntity, selectedEnrollment, flag) {
+                if (allProgramRules) {
                     var variablesHash = {};
 
                     //Concatenate rules produced by indicator definitions into the other rules:
                     var rules = $filter('filter')(allProgramRules.programRules, {programStageId: null});
 
-                    if(executingEvent.programStage){
-                        if(!rules) {
+                    if (executingEvent.programStage) {
+                        if (!rules) {
                             rules = [];
                         }
                         rules = rules.concat($filter('filter')(allProgramRules.programRules, {programStageId: executingEvent.programStage}));
                     }
-                    if(!rules) {
+                    if (!rules) {
                         rules = [];
                     }
                     rules = rules.concat(allProgramRules.programIndicators.rules);
@@ -1788,64 +1986,62 @@ var d2Services = angular.module('d2Services', ['ngResource'])
 
                     variablesHash = VariableService.getVariables(allProgramRules, executingEvent, evs, allDataElements, selectedEntity, selectedEnrollment);
 
-                    if(angular.isObject(rules) && angular.isArray(rules)){
+                    if (angular.isObject(rules) && angular.isArray(rules)) {
                         //The program has rules, and we want to run them.
                         //Prepare repository unless it is already prepared:
-                        if(angular.isUndefined( $rootScope.ruleeffects ) ) {
+                        if (angular.isUndefined($rootScope.ruleeffects)) {
                             $rootScope.ruleeffects = {};
                         }
 
                         var ruleEffectKey = executingEvent.event ? executingEvent.event : executingEvent;
-                        if( executingEvent.event && angular.isUndefined( $rootScope.ruleeffects[ruleEffectKey] )){
+                        if (executingEvent.event && angular.isUndefined($rootScope.ruleeffects[ruleEffectKey])) {
                             $rootScope.ruleeffects[ruleEffectKey] = {};
                         }
 
-                        if(!angular.isObject(executingEvent) && angular.isUndefined( $rootScope.ruleeffects[ruleEffectKey] )){
+                        if (!angular.isObject(executingEvent) && angular.isUndefined($rootScope.ruleeffects[ruleEffectKey])) {
                             $rootScope.ruleeffects[ruleEffectKey] = {};
                         }
 
                         var updatedEffectsExits = false;
                         var eventsCreated = 0;
 
-                        angular.forEach(rules, function(rule) {
+                        angular.forEach(rules, function (rule) {
                             var ruleEffective = false;
 
                             var expression = rule.condition;
                             //Go through and populate variables with actual values, but only if there actually is any replacements to be made(one or more "$" is present)
-                            if(expression) {
-                                if(expression.indexOf('{') !== -1) {
+                            if (expression) {
+                                if (expression.indexOf('{') !== -1) {
                                     expression = replaceVariables(expression, variablesHash);
                                 }
-
                                 //run expression:
                                 ruleEffective = runExpression(expression, rule.condition, "rule:" + rule.id, flag, variablesHash);
                             } else {
                                 $log.warn("Rule id:'" + rule.id + "'' and name:'" + rule.name + "' had no condition specified. Please check rule configuration.");
                             }
 
-                            angular.forEach(rule.programRuleActions, function(action){
+                            angular.forEach(rule.programRuleActions, function (action) {
                                 //In case the effect-hash is not populated, add entries
-                                if(angular.isUndefined( $rootScope.ruleeffects[ruleEffectKey][action.id] )){
-                                    $rootScope.ruleeffects[ruleEffectKey][action.id] =  {
-                                        id:action.id,
-                                        location:action.location,
-                                        action:action.programRuleActionType,
-                                        dataElement:action.dataElement,
-                                        trackedEntityAttribute:action.trackedEntityAttribute,
+                                if (angular.isUndefined($rootScope.ruleeffects[ruleEffectKey][action.id])) {
+                                    $rootScope.ruleeffects[ruleEffectKey][action.id] = {
+                                        id: action.id,
+                                        location: action.location,
+                                        action: action.programRuleActionType,
+                                        dataElement: action.dataElement,
+                                        trackedEntityAttribute: action.trackedEntityAttribute,
                                         programStage: action.programStage,
                                         programIndicator: action.programIndicator,
                                         programStageSection: action.programStageSection && action.programStageSection.id ? action.programStageSection.id : null,
-                                        content:action.content,
-                                        data:action.data,
-                                        ineffect:undefined
+                                        content: action.content,
+                                        data: action.data,
+                                        ineffect: undefined
                                     };
                                 }
 
                                 //In case the rule is effective and contains specific data,
                                 //the effect be refreshed from the variables list.
                                 //If the rule is not effective we can skip this step
-                                if(ruleEffective && action.data)
-                                {
+                                if (ruleEffective && action.data) {
                                     //Preserve old data for comparison:
                                     var oldData = $rootScope.ruleeffects[ruleEffectKey][action.id].data;
 
@@ -1853,15 +2049,13 @@ var d2Services = angular.module('d2Services', ['ngResource'])
                                     //To make a lookup in variables hash, we must make a lookup without the dollar sign in the variable name
                                     //The first strategy is to make a direct lookup. In case the "data" expression is more complex, we have to do more replacement and evaluation.
 
-                                    var nameWithoutBrackets = action.data.replace('#{','').replace('}','');
-                                    if(angular.isDefined(variablesHash[nameWithoutBrackets]))
-                                    {
+                                    var nameWithoutBrackets = action.data.replace('#{', '').replace('}', '');
+                                    if (angular.isDefined(variablesHash[nameWithoutBrackets])) {
                                         //The variable exists, and is replaced with its corresponding value
                                         $rootScope.ruleeffects[ruleEffectKey][action.id].data =
                                             variablesHash[nameWithoutBrackets].variableValue;
                                     }
-                                    else if(action.data.indexOf('{') !== -1 || action.data.indexOf('d2:') !== -1)
-                                    {
+                                    else if (action.data.indexOf('{') !== -1 || action.data.indexOf('d2:') !== -1) {
                                         //Since the value couldnt be looked up directly, and contains a curly brace or a dhis function call,
                                         //the expression was more complex than replacing a single variable value.
                                         //Now we will have to make a thorough replacement and separate evaluation to find the correct value:
@@ -1870,25 +2064,24 @@ var d2Services = angular.module('d2Services', ['ngResource'])
                                         $rootScope.ruleeffects[ruleEffectKey][action.id].data = runExpression($rootScope.ruleeffects[ruleEffectKey][action.id].data, action.data, "action:" + action.id, flag, variablesHash);
                                     }
 
-                                    if(oldData !== $rootScope.ruleeffects[ruleEffectKey][action.id].data) {
+                                    if (oldData !== $rootScope.ruleeffects[ruleEffectKey][action.id].data) {
                                         updatedEffectsExits = true;
                                     }
                                 }
 
                                 //Update the rule effectiveness if it changed in this evaluation;
-                                if($rootScope.ruleeffects[ruleEffectKey][action.id].ineffect !== ruleEffective)
-                                {
+                                if ($rootScope.ruleeffects[ruleEffectKey][action.id].ineffect !== ruleEffective) {
                                     //There is a change in the rule outcome, we need to update the effect object.
                                     updatedEffectsExits = true;
                                     $rootScope.ruleeffects[ruleEffectKey][action.id].ineffect = ruleEffective;
                                 }
 
                                 //In case the rule is of type CREATEEVENT, run event creation:
-                                if($rootScope.ruleeffects[ruleEffectKey][action.id].action === "CREATEEVENT" && $rootScope.ruleeffects[ruleEffectKey][action.id].ineffect){
-                                    if(evs && evs.byStage && evs.byStage[$rootScope.ruleeffects[ruleEffectKey]] && evs.byStage[$rootScope.ruleeffects[ruleEffectKey][action.id]])
-                                    {
-                                        if(evs.byStage[$rootScope.ruleeffects[ruleEffectKey][action.id].programStage]) {
-                                            eventsCreated += performCreateEventAction($rootScope.ruleeffects[ruleEffectKey][action.id], selectedEntity, selectedEnrollment, evs.byStage[$rootScope.ruleeffects[ruleEffectKey][action.id].programStage.id]);
+                                if ($rootScope.ruleeffects[ruleEffectKey][action.id].action === "CREATEEVENT" && $rootScope.ruleeffects[ruleEffectKey][action.id].ineffect) {
+                                    if (evs && evs.byStage) {
+                                        if ($rootScope.ruleeffects[ruleEffectKey][action.id].programStage) {
+                                            var createdNow = performCreateEventAction($rootScope.ruleeffects[ruleEffectKey][action.id], selectedEntity, selectedEnrollment, evs.byStage[$rootScope.ruleeffects[ruleEffectKey][action.id].programStage.id]);
+                                            eventsCreated += createdNow;
                                         } else {
                                             $log.warn("No programstage defined for CREATEEVENT action: " + action.id);
                                         }
@@ -1899,21 +2092,21 @@ var d2Services = angular.module('d2Services', ['ngResource'])
                                 }
                                 //In case the rule is of type "assign variable" and the rule is effective,
                                 //the variable data result needs to be applied to the correct variable:
-                                else if($rootScope.ruleeffects[ruleEffectKey][action.id].action === "ASSIGN" && $rootScope.ruleeffects[ruleEffectKey][action.id].ineffect){
+                                else if ($rootScope.ruleeffects[ruleEffectKey][action.id].action === "ASSIGN" && $rootScope.ruleeffects[ruleEffectKey][action.id].ineffect) {
                                     //from earlier evaluation, the data portion of the ruleeffect now contains the value of the variable to be assign.
                                     //the content portion of the ruleeffect defines the name for the variable, when dollar is removed:
                                     var variabletoassign = $rootScope.ruleeffects[ruleEffectKey][action.id].content ?
-                                        $rootScope.ruleeffects[ruleEffectKey][action.id].content.replace("#{","").replace("}","") : null;
+                                        $rootScope.ruleeffects[ruleEffectKey][action.id].content.replace("#{", "").replace("}", "") : null;
 
-                                    if((!variabletoassign || !angular.isDefined(variablesHash[variabletoassign])) && !$rootScope.ruleeffects[ruleEffectKey][action.id].dataElement){
+                                    if ((!variabletoassign || !angular.isDefined(variablesHash[variabletoassign])) && !$rootScope.ruleeffects[ruleEffectKey][action.id].dataElement) {
                                         $log.warn("Variable " + variabletoassign + " was not defined.");
                                     }
 
                                     var updatedValue = $rootScope.ruleeffects[ruleEffectKey][action.id].data;
 
                                     //Even if the variable is not defined: we assign it:
-                                    if(variablesHash[variabletoassign] &&
-                                        variablesHash[variabletoassign].variableValue !== updatedValue){
+                                    if (variablesHash[variabletoassign] &&
+                                        variablesHash[variabletoassign].variableValue !== updatedValue) {
                                         //If the variable was actually updated, we assume that there is an updated ruleeffect somewhere:
                                         updatedEffectsExits = true;
                                         //Then we assign the new value:
@@ -1922,26 +2115,186 @@ var d2Services = angular.module('d2Services', ['ngResource'])
                                         var processedValue = VariableService.processValue(updatedValue, valueType);
 
                                         variablesHash[variabletoassign] = {
-                                            variableValue:processedValue,
-                                            variableType:valueType,
-                                            hasValue:true,
-                                            variableEventDate:'',
-                                            variablePrefix:'#',
-                                            allValues:[processedValue]
+                                            variableValue: processedValue,
+                                            variableType: valueType,
+                                            hasValue: true,
+                                            variableEventDate: '',
+                                            variablePrefix: '#',
+                                            allValues: [processedValue]
                                         };
                                     }
                                 }
                             });
                         });
-
-                        //Broadcast rules finished if there was any actual changes to the event.
-                        //if(updatedEffectsExits){
-                        //    $rootScope.$broadcast("ruleeffectsupdated", { event: ruleEffectKey, eventsCreated:eventsCreated });
-                        //}
+                        return {event: ruleEffectKey, ruleeffects: $rootScope.ruleeffects};
                     }
-
-                    return { event: ruleEffectKey, ruleeffects:$rootScope.ruleeffects };
                 }
             }
+        }
+    })
+
+
+    /* service for dealing with events */
+    .service('DHIS2EventService', function(){
+        return {
+            //for simplicity of grid display, events were changed from
+            //event.datavalues = [{dataElement: dataElement, value: value}] to
+            //event[dataElement] = value
+            //now they are changed back for the purpose of storage.
+            reconstructEvent: function(event, programStageDataElements){
+                var e = {};
+
+                e.event         = event.event;
+                e.status        = event.status;
+                e.program       = event.program;
+                e.programStage  = event.programStage;
+                e.orgUnit       = event.orgUnit;
+                e.eventDate     = event.eventDate;
+
+                var dvs = [];
+                angular.forEach(programStageDataElements, function(prStDe){
+                    if(event.hasOwnProperty(prStDe.dataElement.id)){
+                        dvs.push({dataElement: prStDe.dataElement.id, value: event[prStDe.dataElement.id]});
+                    }
+                });
+
+                e.dataValues = dvs;
+
+                if(event.coordinate){
+                    e.coordinate = {latitude: event.coordinate.latitude ? event.coordinate.latitude : '',
+                        longitude: event.coordinate.longitude ? event.coordinate.longitude : ''};
+                }
+
+                return e;
+            },
+            refreshList: function(eventList, currentEvent){
+                if(!eventList || !eventList.length){
+                    return;
+                }
+                var continueLoop = true;
+                for(var i=0; i< eventList.length && continueLoop; i++){
+                    if(eventList[i].event === currentEvent.event ){
+                        eventList[i] = currentEvent;
+                        continueLoop = false;
+                    }
+                }
+                return eventList;
+            }
         };
+    })
+
+    /* current selections */
+    .service('CurrentSelection', function(){
+        this.currentSelection = {};
+        this.relationshipInfo = {};
+        this.optionSets = null;
+        this.attributesById = null;
+        this.ouLevels = null;
+        this.sortedTeiIds = [];
+        this.selectedTeiEvents = null;
+        this.relationshipOwner = {};
+        this.selectedTeiEvents = [];
+        this.fileNames = [];
+        this.location = null;
+
+        this.set = function(currentSelection){
+            this.currentSelection = currentSelection;
+        };
+        this.get = function(){
+            return this.currentSelection;
+        };
+
+        this.setRelationshipInfo = function(relationshipInfo){
+            this.relationshipInfo = relationshipInfo;
+        };
+        this.getRelationshipInfo = function(){
+            return this.relationshipInfo;
+        };
+
+        this.setOptionSets = function(optionSets){
+            this.optionSets = optionSets;
+        };
+        this.getOptionSets = function(){
+            return this.optionSets;
+        };
+
+        this.setAttributesById = function(attributesById){
+            this.attributesById = attributesById;
+        };
+        this.getAttributesById = function(){
+            return this.attributesById;
+        };
+
+        this.setOuLevels = function(ouLevels){
+            this.ouLevels = ouLevels;
+        };
+        this.getOuLevels = function(){
+            return this.ouLevels;
+        };
+
+        this.setSortedTeiIds = function(sortedTeiIds){
+            this.sortedTeiIds = sortedTeiIds;
+        };
+        this.getSortedTeiIds = function(){
+            return this.sortedTeiIds;
+        };
+
+        this.setSelectedTeiEvents = function(selectedTeiEvents){
+            this.selectedTeiEvents = selectedTeiEvents;
+        };
+        this.getSelectedTeiEvents = function(){
+            return this.selectedTeiEvents;
+        };
+
+        this.setRelationshipOwner = function(relationshipOwner){
+            this.relationshipOwner = relationshipOwner;
+        };
+        this.getRelationshipOwner = function(){
+            return this.relationshipOwner;
+        };
+
+        this.setFileNames = function(fileNames){
+            this.fileNames = fileNames;
+        };
+        this.getFileNames = function(){
+            return this.fileNames;
+        };
+
+        this.setLocation = function(location){
+            this.location = location;
+        };
+        this.getLocation = function(){
+            return this.location;
+        };
+    })
+    .service('AuditHistoryDataService', function( $http, DialogService ) {
+        this.getAuditHistoryData = function( dataElementID, dataType, dataElementName, currentEvent, selectedTeiId ) {
+            var url="";
+            if (dataType === "attribute") {
+                if (!selectedTeiId) {
+                    url = '../api/audits/trackedEntityAttributeValue.json?tea=' + dataElementID;
+                } else {
+                    url = '../api/audits/trackedEntityAttributeValue.json?tea=' + dataElementID+'&tei='+selectedTeiId;
+                }
+            } else {
+                if (!currentEvent) {
+                    url = '../api/audits/trackedEntityDataValue.json?de=' + dataElementID;
+                } else {
+                    url = '../api/audits/trackedEntityDataValue.json?de=' + dataElementID+'&psi='+currentEvent;
+                }
+            }
+
+            var promise = $http.get(url).then(function( response ) {
+                return response.data;
+            }, function( response ) {
+                if( response && response.data && response.data.status === 'ERROR' ) {
+                    var dialogOptions = {
+                        headerText: response.data.status,
+                        bodyText: response.data.message ? response.data.message : $translate.instant('unable_to_fetch_data_from_server')
+                    };
+                    DialogService.showDialog({}, dialogOptions);
+                }
+            });
+            return promise;
+        }
     });

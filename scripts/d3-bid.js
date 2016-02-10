@@ -14,6 +14,8 @@ $(document).ready(function () {
         var w = _width - left_margin - right_margin;
         var xAxisLabels = data.xAxisLabels;
         var legend_labels = data.legendLabels;
+        d3.selectAll("#chart svg").remove();
+
         var svg = d3.select("#chart")
             .append("svg")
             .attr("width", _width)

@@ -3,27 +3,25 @@
 <h2>  Who could come today?  <img ng-show="loading" height="22" src="resources/images/loader-circle.GIF">
  <span style="float:right">
     <i>Facility</i> : <label>{{selectedOrgUnit.name}}</label>, <i>User</i> : <label>{{currentUser.displayName}}</label>
-</span></h2>
-
-
+</span>
+</h2>
+    <input type="checkbox" ng-model="showAlreadyGivenVaccines"> Display Already Given Vaccines</input>
 </div>
 <div id="report-page">
 
     <table class="bidTable dhis2-table-hover table-bordered dhis2-table-striped " ng-show="!loading">
         <tr><th></th><th ng-repeat="header in reportTemplate.header"  ng-class="{'tableAttribute' :header.type == 'attribute','tableDataElement' :header.type == 'dataElement'}">{{header.name}}</th></tr>
-
         <tr ng-repeat="event in reportEvents" ng-class="{'overDueRow' : event.event.isOverDue}">
             <td>{{$index+1}}</td>
             <td ng-repeat="header in reportTemplate.header" title="{{header.name}}">
                 <span ng-switch on="event.reportTEAPlusDeValueMap[header.id].value">
                     <span ng-switch-when="hidden"></span>
-                    <span ng-switch-when="visible"><img height="33" width="33" src="resources/images/scheduled2.png"></span>
-                    <span ng-switch-when="true"><img height="33" width="33" src="resources/images/check.png"></span>
+                    <span ng-switch-when="visible"><!--<img height="33" width="33" src="resources/images/scheduled2.png">--><i class="fa fa-calendar fa-lg"></i></span>
+                    <span ng-switch-when="true" ng-show="showAlreadyGivenVaccines"><!--<img height="33" width="33" src="resources/images/check.png">--><i class="fa fa-check fa-lg"></i></span>
+                    <span ng-switch-when="false"></span>
                     <span ng-switch-default>{{event.reportTEAPlusDeValueMap[header.id].value }}</span>
                 </span>
             </td>
         </tr>
-
     </table>
-
 </div>
