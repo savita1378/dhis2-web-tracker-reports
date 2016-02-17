@@ -14,6 +14,9 @@ $(document).ready(function () {
         var w = _width - left_margin - right_margin;
         var xAxisLabels = data.xAxisLabels;
         var legend_labels = data.legendLabels;
+        var xAxisTitle = data.xAxisTitle;
+        var yAxisTitle = data.yAxisTitle;
+
         d3.selectAll("#chart svg").remove();
 
         var svg = d3.select("#chart")
@@ -108,6 +111,26 @@ $(document).ready(function () {
                 .attr("x2", w+left_margin)     // x position of the second end of the line
                 .attr("y2", h+top_margin)
                 .attr("class", "axis line");
+
+        svg.append("text")
+            .attr("x",function(){
+                return (_width-right_margin)/2;
+            })
+            .attr("y",function(){
+                return height-padding;
+            })
+            .text(xAxisTitle)
+            .attr("font-weight","bold")
+
+        svg.append("text")
+            .attr("x",function(){
+                return 0 ;
+            })
+            .attr("y",function(){
+                return height/2;
+            })
+            .text(yAxisTitle)
+            .attr("font-weight","bold")
 
         for (var k = 0; k < rows; k++) {
             svg.append("rect")

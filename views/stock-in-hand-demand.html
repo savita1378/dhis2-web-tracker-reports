@@ -16,16 +16,25 @@
 </div>
 
     <div id="main-page" ng-show="!loading">
-        <div id="chart">
+
+        <div style="width: 90%;" class="row col-sm-12">
+            <div class="col-md-7 " >
+                <div id="chart">        </div>
+            </div>
+
+            <div class="col-md-5  bottom" >
+                <table class=" bidTable dhis2-table-hover table-bordered dhis2-table-striped ">
+
+                    <tr><th>#</th><th ng-repeat="templateItem in template">{{templateItem.name}}</th></tr>
+                    <tr><th>Demand</th>
+                        <td ng-repeat="templateItem in template">{{templateItem.demand}}</td></tr>
+                    <tr><th>In Hand</th>
+                        <td ng-repeat="templateItem in template">{{templateItem.balance}}</td></tr>
+
+                </table>
+            </div>
         </div>
-        <table class=" bidTable dhis2-table-hover table-bordered dhis2-table-striped ">
 
-        <tr><th>#</th><th ng-repeat="templateItem in template">{{templateItem.name}}</th></tr>
-        <tr><th>Demand</th>
-            <td ng-repeat="templateItem in template">{{templateItem.demand}}</td></tr>
-        <tr><th>In Hand</th>
-            <td ng-repeat="templateItem in template">{{templateItem.balance}}</td></tr>
 
-        </table>
 
 </div>

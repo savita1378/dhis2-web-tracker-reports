@@ -16,9 +16,7 @@ bidReportsApp
                                              TrackerRulesExecutionService) {
 
         /* HARDCODE PARAMETERS */
-        //const sqlViewSelected = "Y52YnK869WO";/*"sjOobMQc3g4"*/;
-        const sqlViewSelected = "sjOobMQc3g4";
-
+        const sqlViewSelected = "Y52YnK869WO";
         const sqlViewChildren = "lTqNF1rWha3";
         const sqlViewDescendent = "CraSsUTG2aw";
 
@@ -472,6 +470,9 @@ bidReportsApp
                 data2.xAxisLabels.push($scope.template[i].name);
             }
             data2.legendLabels = ["Demand", "In Hand"];
+            data2.xAxisTitle = "Vaccines";
+            data2.yAxisTitle = "Units";
+            data2.chartTitle = "Stock Vs Demand";
             d3.makeChart(data2, 400, 600);
         }
 

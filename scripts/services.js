@@ -44,6 +44,19 @@ var bidReportsAppServices = angular.module('bidReportsAppServices', [])
                });
                return def;
            },
+           getAllEventsByProgramStageAndOU : function(programStage,ouId,ouMode){
+               var def = $.Deferred();
+               $.ajax({
+                   type: "GET",
+                   dataType: "json",
+                   contentType: "application/json",
+                   url: '../../events.json?skipPaging=true&programStage='+programStage+'&orgUnit='+ouId+'&ouMode='+ouMode,
+                   success: function (data) {
+                       def.resolve(data.events);
+                   }
+               });
+               return def;
+           },
            getAllConstants : function(){
                var def = $q.defer();
                $.ajax({
@@ -306,6 +319,16 @@ var bidReportsAppServices = angular.module('bidReportsAppServices', [])
                     object[i][id] = value;
                 }
                 return object;
+            },
+            prepareMapGroupedById: function(object,id){
+                var map = [];
+                for (var i=0;i<object.length;i++){
+                    if (!map[object[i][id]]){
+                        map[object[i][id]] = [];
+                    }
+                  map[object[i][id]].push(object[i]);
+                }
+                return map;
             }
         }
     })

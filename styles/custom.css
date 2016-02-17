@@ -1,6 +1,6 @@
 #main-page
 {
-    margin: 65px 10px 10px 30px;
+    margin: 5px 10px 10px 30px;
 }
 #header-page{
     margin: 65px 5px 15px 35px;
@@ -10,21 +10,35 @@
     margin: 5px 10px 20px 40px;
 }
 
+.bidTable{
+
+    word-wrap: break-word;
+}
+
 .bidTable th,td{
     padding: 10px;
     text-align: left;
+    width: 7%;
 }
-
+.sNo{
+    width:4%!important;
+}
 .totals{
     vertical-align : bottom;
 }
 .tableAttribute{
     background-color: lightblue!important;
+
 }
 .tableDataElement{
     background-color: burlywood!important;
-    width: 40px;
-    word-wrap: break-word;
+}
+
+.attrWidth{
+    width: 7%!important;
+}
+.deWidth{
+    width: 5%!important;
 }
 .totalRow{
     background-color: lavender!important;
