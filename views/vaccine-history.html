@@ -2,7 +2,7 @@
 <div id="header-page">
     <h2>  Vaccine History Report  <img ng-show="loading" height="22" src="resources/images/loader-circle.GIF">
  <span style="float:right">
-    <i>Facility</i> : <label>{{selectedOrgUnit.name}}</label>, <i>User</i> : <label>{{currentUser.displayName}}</label>
+    Facility : <i><label>{{selectedOrgUnit.name}}</label></i>, User : <i><label>{{currentUser.displayName}}</label></i>
 </span>
     </h2>
 </div>
@@ -16,7 +16,7 @@
                 <span ng-switch on="event.reportTEAPlusDeValueMap[header.id].value">
                     <span ng-switch-when="hidden"></span>
                     <span ng-switch-when="visible"></span>
-                    <span ng-switch-when="true" ><i class="fa fa-check fa-lg"></i></span>
+                    <span ng-switch-when="true" ><i class="fa fa-check "></i></span>
                     <span ng-switch-when="false"></span>
                     <span ng-switch-default>{{event.reportTEAPlusDeValueMap[header.id].value }}</span>
                 </span>

@@ -1,6 +1,6 @@
 #main-page
 {
-    margin: 5px 10px 10px 30px;
+    margin: 65px 10px 10px 30px;
 }
 #header-page{
     margin: 65px 5px 15px 35px;
@@ -16,6 +16,7 @@
 }
 
 .bidTable th,td{
+    table-layout: fixed;
     padding: 10px;
     text-align: left;
     width: 7%;
@@ -52,4 +53,10 @@
 .overDueRow{
     color: indianred!important;
 
+}
+
+.vcenter {
+    display: inline-block;
+    vertical-align: middle;
+    float: none;
 }

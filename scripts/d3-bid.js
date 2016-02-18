@@ -37,7 +37,7 @@ $(document).ready(function () {
         var columns = data.matrix[0].length;
         var gap = padding;
         var width = (w - columns * gap) / (rows * columns );
-        var fill = ["green", "teal", "red", "blue", "orange"];
+        var fill = ["#ef415c", "teal", "red", "blue", "orange"];
         var legend_box_width = width;
         var legend_box_height = width/2;
 
@@ -95,14 +95,15 @@ $(document).ready(function () {
             .enter()
             .append("text")
             .attr("x", function (d, i) {
-                return left_margin +(i*rows*width) +(width/2) +i*gap;
+                return left_margin +(i*rows*width) +(width/2) +i*gap ;
             })
             .attr("y", function (d) {
                 return (height-bottom_margin/2);
             })
             .text(function (d) {
                 return d;
-            });
+            })
+        ;
 
         var line = d3.svg.line();
             svg.append("line")
@@ -151,7 +152,7 @@ $(document).ready(function () {
                     return _width-right_margin + legend_box_width+padding;
                 })
                 .attr("y",function(){
-                    return legend_box_height + (legend_box_height+padding)*k + legend_box_width/2;
+                    return legend_box_height + (legend_box_height+padding)*k + legend_box_height/1.5;
                 })
                 .text(legend_labels[k])
 

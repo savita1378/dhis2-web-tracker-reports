@@ -112,6 +112,7 @@ bidReportsApp
 
         _fetchMetaData().then(function(){
             _prepareStockBalanceReport();
+            prepareToMakeChart();
             $timeout(function(){
                 $scope.template;
                 $scope.loading = false;
@@ -128,6 +129,46 @@ bidReportsApp
             for (var i=0;i<data.height;i++){
                 $scope.balanceDeToTemplateObjectMap[data.rows[i][0]].balance = data.rows[i][2];
             }
+        }
+
+
+        function prepareToMakeChart() {
+            var data = {
+                max: 0,
+                values: []
+            };
+
+            var data2 = {
+                matrix: [],
+                max: 0,
+                xAxisLabels: []
+            };
+            data2.matrix[0] = [];
+            //data2.matrix[1] = [];
+
+            //var data = {
+            //    max : [2,2,2,2],
+            //    header:["a","b","c","d"],
+            //    values : [[1,2,3,4],
+            //        [       ]]
+            //};
+            for (var i = 0; i < $scope.template.length; i++) {
+                if (data2.max < $scope.template[i].balance)
+                    data2.max = $scope.template[i].balance;
+
+              //   data.values.push({type: "demand", value: $scope.template[i].demand});
+                data.values.push({type: "balance", value: $scope.template[i].balance});
+
+             //   data2.matrix[0].push($scope.template[i].demand);
+                data2.matrix[0].push(parseInt($scope.template[i].balance));
+
+                data2.xAxisLabels.push($scope.template[i].name);
+            }
+            data2.legendLabels = ["In Hand"];
+            data2.xAxisTitle = "Vaccines";
+            data2.yAxisTitle = "Units";
+            data2.chartTitle = "Stock Balance";
+            d3.makeChart(data2, 400, 600);
         }
 
         /* Functions */

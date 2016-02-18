@@ -2,7 +2,7 @@
 <div id="header-page">
     <h2> Stock In-Hand Vs Demand  <img ng-show="loading" height="22" src="resources/images/loader-circle.GIF">
  <span style="float:right">
-    <i>Facility</i> : <label>{{selectedOrgUnit.name}}</label>, <i>User</i> : <label>{{currentUser.displayName}}</label>
+    Facility : <i><label>{{selectedOrgUnit.name}}</label></i>, User : <i><label>{{currentUser.displayName}}</label></i>
 </span></h2>
 
     <br><b>
@@ -18,11 +18,11 @@
     <div id="main-page" ng-show="!loading">
 
         <div style="width: 90%;" class="row col-sm-12">
-            <div class="col-md-7 " >
-                <div id="chart">        </div>
+            <div class="col-md-7" >
+                <div id="chart"></div>
             </div>
 
-            <div class="col-md-5  bottom" >
+            <div class="col-md-5" >
                 <table class=" bidTable dhis2-table-hover table-bordered dhis2-table-striped ">
 
                     <tr><th>#</th><th ng-repeat="templateItem in template">{{templateItem.name}}</th></tr>

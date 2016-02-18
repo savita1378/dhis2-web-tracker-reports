@@ -2,9 +2,6 @@
  * Created by harsh on 17/2/16.
  */
 
-// get all tei for an ou
-// get all events of tei
-
 bidReportsApp.controller('VaccineHistoryController',
     function($scope,
              userSettingsService,
@@ -259,26 +256,6 @@ bidReportsApp.controller('VaccineHistoryController',
             return des;
         }
 
-        sort = function(events,sortedEvents){
-            if (events.length == 0){
-                return
-            }
-
-            var minEvent = events[0];
-            for (var i=0 ;i<events.length;i++){
-                if (minEvent.sortingDate > events[i].sortingDate){
-                    minEvent = events[i]
-                }
-            }
-            sortedEvents.push(minEvent);
-            var newEvents = [];
-            for (var j=0;j<events.length;j++){
-                if (events[j].event != minEvent.event){
-                    newEvents.push(events[j]);
-                }
-            }
-            sort(newEvents,sortedEvents)
-        }
 
         formatAtt = function(map,attributes){
             map["age"] =      {
@@ -342,16 +319,7 @@ bidReportsApp.controller('VaccineHistoryController',
 
             }
         }
-        getEventsByStage = function (events) {
-            var eventsByStage = [];
-            for (var i = 0; i < events.length; i++) {
-                if (!eventsByStage[events[i].programStage]) {
-                    eventsByStage[events[i].programStage] = [];
-                }
-                eventsByStage[events[i].programStage].push(events[i]);
-            }
-            return eventsByStage;
-        }
+
 
         populateValue = function(prstDeDes,value){
             var des = [];

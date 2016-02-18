@@ -339,8 +339,10 @@ bidReportsApp
         }
 
         function filterByDate(events, days) {
+
+
             var today = new Date();
-            var futureDate = today.setDate(today.getDate() + parseInt(days));
+            var futureDate = new Date(today.getTime() + parseInt(days)*24*60*60*1000);
             var filteredEvents = [];
             for (var i = 0; i < events.length; i++) {
                 if (new Date(events[i].dueDate) < futureDate)
