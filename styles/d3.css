@@ -15,17 +15,15 @@
     margin: 0px 5px 0px 0px;
 
 }
-
 .axis path,
 .axis line {
     fill: none;
-    stroke: black;
+    stroke: grey;
     shape-rendering: crispEdges;
 }
 
-
 .y.axis path,line {
     fill: none;
-    stroke: black;
+    stroke: grey;
     shape-rendering: crispEdges;
 }

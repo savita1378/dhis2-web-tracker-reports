@@ -168,7 +168,7 @@ bidReportsApp
             data2.xAxisTitle = "Vaccines";
             data2.yAxisTitle = "Units";
             data2.chartTitle = "Stock Balance";
-            d3.makeChart(data2, 400, 600);
+            d3.makeChart(data2, 400, 500);
         }
 
         /* Functions */

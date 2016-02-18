@@ -47,7 +47,7 @@ $(document).ready(function () {
             .ticks(columns);
         svg.append("g")
             .attr("class", "y axis")
-            .attr("transform", "translate(" + left_margin + "," + top_margin + ")")
+            .attr("transform", "translate(" + (left_margin-padding)  + "," + top_margin + ")")
             .call(yAxis);
 
         for (var k = 0; k < rows; k++) {
@@ -84,7 +84,8 @@ $(document).ready(function () {
                 .text(function (d) {
                     return d;
                 })
-                .attr("text-anchor", "middle");
+                .attr("text-anchor", "middle")
+                .attr("font-size", "12px")
         }
 
         // X Axis labels
@@ -95,7 +96,8 @@ $(document).ready(function () {
             .enter()
             .append("text")
             .attr("x", function (d, i) {
-                return left_margin +(i*rows*width) +(width/2) +i*gap ;
+                var widthPixel =getWidthInPixel(d);
+                return left_margin +(i*rows*width) +(width*rows)/2 +i*gap - widthPixel/2;
             })
             .attr("y", function (d) {
                 return (height-bottom_margin/2);
@@ -107,9 +109,9 @@ $(document).ready(function () {
 
         var line = d3.svg.line();
             svg.append("line")
-                .attr("x1", left_margin)     // x position of the first end of the line
+                .attr("x1", left_margin-padding)     // x position of the first end of the line
                 .attr("y1", h+top_margin)      // y position of the first end of the line
-                .attr("x2", w+left_margin)     // x position of the second end of the line
+                .attr("x2", w+left_margin+padding)     // x position of the second end of the line
                 .attr("y2", h+top_margin)
                 .attr("class", "axis line");
 
@@ -118,7 +120,7 @@ $(document).ready(function () {
                 return (_width-right_margin)/2;
             })
             .attr("y",function(){
-                return height-padding;
+                return height-padding/2;
             })
             .text(xAxisTitle)
             .attr("font-weight","bold")
@@ -159,4 +161,21 @@ $(document).ready(function () {
         }
 
         }
+    function getWidthInPixel(str){
+
+        var canvas = document.createElement('canvas');
+        var c = canvas.getContext('2d');
+// set here c.font to adjust it to your need
+        var w = c.measureText(str).width;
+
+    //  var body = document.getElementsByTagName("body")[0];
+    //    var span = document.createElement("span");
+    //    span.id="span"
+    //    span.textContent = str;
+    //    body.appendChild(span);
+    //    span = document.getElementById("span")    ;
+    //
+    //return span.width();
+        return w;
+    }
 })
