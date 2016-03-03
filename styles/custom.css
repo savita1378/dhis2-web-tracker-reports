@@ -60,3 +60,11 @@
     vertical-align: middle;
     float: none;
 }
+
+.excess{
+    background-color: lightgreen;
+}
+.shortage{
+    background-color: indianred;
+
+}

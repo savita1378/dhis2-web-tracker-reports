@@ -5,14 +5,20 @@
     Facility : <i><label>{{selectedOrgUnit.name}}</label></i>, User : <i><label>{{currentUser.displayName}}</label></i>
 </span></h2>
 
-    <br><b>
+    <br>
     <label>Demand - Uptill next : </label><br>
-    <input type="radio" ng-model="Days" value="1" ng-click="generateDemandReport()"> 1 Day
-    <input type="radio" ng-model="Days" value="3" ng-click="generateDemandReport()"> 3 Day
-    <input type="radio" ng-model="Days" value="7" ng-click="generateDemandReport()"> A Week
-    <input type="radio" ng-model="Days" value="14" ng-click="generateDemandReport()"> 2 Weeks
-    <input type="radio" ng-model="Days" value="60" ng-click="generateDemandReport()"> 2 Months
-</b>
+    <input type="radio" ng-model="Days" value="1" ng-click="radioEventFired()"> 1 Day
+    <input type="radio" ng-model="Days" value="3" ng-click="radioEventFired()"> 3 Day
+    <input type="radio" ng-model="Days" value="7" ng-click="radioEventFired()"> A Week
+    <input type="radio" ng-model="Days" value="14" ng-click="radioEventFired()"> 2 Weeks
+    <input type="radio" ng-model="Days" value="60" ng-click="radioEventFired()"> 2 Months
+
+    <br><b>OR</b><br>
+    <label>Choose Dates Between </label>
+    <input type="date" ng-model="startDate" min="{{DateToday}}"> <b>AND</b>
+    <input type="date" ng-model="endDate" min="{{DateToday}}">
+    <input type="button" value="Go" ng-click="go()">
+
 </div>
 
     <div id="main-page" ng-show="!loading">
@@ -23,14 +29,16 @@
             </div>
 
             <div class="col-md-5" >
-                <table class=" bidTable dhis2-table-hover table-bordered dhis2-table-striped ">
+                <table class=" bidTable  table-bordered dhis2-table-striped ">
 
                     <tr><th>#</th><th ng-repeat="templateItem in template">{{templateItem.name}}</th></tr>
                     <tr><th>Demand</th>
-                        <td ng-repeat="templateItem in template">{{templateItem.demand}}</td></tr>
+                        <td ng-repeat="templateItem in template">{{templateItem.demand + templateItem.demandOffset}}</td></tr>
                     <tr><th>In Hand</th>
                         <td ng-repeat="templateItem in template">{{templateItem.balance}}</td></tr>
-
+                    <tr><th>Shortage/Excess</th>
+                        <td ng-repeat="templateItem in template" ng-class="{'excess':(templateItem.balance - templateItem.demand - templateItem.demandOffset )>0 ,
+                                                                            'shortage':(templateItem.balance - templateItem.demand - templateItem.demandOffset )<0}">{{ templateItem.balance - templateItem.demand - templateItem.demandOffset }}</td></tr>
                 </table>
             </div>
         </div>

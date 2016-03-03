@@ -65,48 +65,55 @@ bidReportsApp
                 balanceDeId: "YCphYFZA8YG",
                 group: "BCG",
                 demand: 0,
-                balance: 0
+                balance: 0,
+                demandOffset:0
             },
             {
                 name: "OPV",
                 balanceDeId: "rczOvUL6XdS",
                 group: "OPV",
                 demand: 0,
-                balance: 0
+                balance: 0,
+                demandOffset:0
             },
             {
                 name: "DPT",
                 balanceDeId: "LG7LZuHdxWi",
                 group: "DPT",
                 demand: 0,
-                balance: 0
+                balance: 0,
+                demandOffset:0
             },
             {
                 name: "PCV",
                 balanceDeId: "ex0fnpbdMnN",
                 group: "PCV",
                 demand: 0,
-                balance: 0
+                balance: 0,
+                demandOffset:0
             },
             {
                 name: "RV",
                 balanceDeId: "coNVUUsyLcl",
                 group: "RV",
                 demand: 0,
-                balance: 0
+                balance: 0,
+                demandOffset:0
             },
             {
                 name: "Measles",
                 balanceDeId: "JcGcvIplsiL",
                 group: "Measles",
                 demand: 0,
-                balance: 0
+                balance: 0,
+                demandOffset:0
             }
         ];
         $scope.balanceDeToTemplateObjectMap = utilityService.prepareIdToObjectMap($scope.template, "balanceDeId");
         $scope.groupToTemplateObjectMap = utilityService.prepareIdToObjectMap($scope.template, "group");
 
-        $scope.Days = 60;
+        $scope.Days = 0;
+        $scope.DateToday = new Date().toISOString().split('T')[0];
         var performance = new Performance();
         /* End */
 
@@ -116,7 +123,10 @@ bidReportsApp
             performance.stop("ajax");
             performance.start("report");
             _prepareStockBalanceReport();
+
+            _manageDates();
             _prepareStockDemandReport();
+            _updateStockDemandReport();
             performance.stop("report");
             console.log(performance.timeTaken("ajax"), performance.timeTaken("report"));
             prepareToMakeChart();
@@ -128,20 +138,26 @@ bidReportsApp
             })
 
             $timeout(function () {
-                _prepareStockDemandReport();
+                _updateStockDemandReport();
                 prepareToMakeChart();
 
                 $scope.loading = false;
             }, 100)
         }
 
-        function _prepareStockDemandReport() {
+        $scope.radioEventFired = function(){
+            _manageDates("radio");
+            $scope.generateDemandReport();
+        }
 
-            _prepareReportTemplate();
-
+        $scope.go = function(){
+            _manageDates();
+            $scope.generateDemandReport();
+        }
+        function _updateStockDemandReport(){
             $scope.reportEvents = [];
 
-            var events = filterByDate($scope.events, $scope.Days);
+            var events = filterBetweenDates($scope.events, $scope.startDate,$scope.endDate);
 
             // for each event run rules
             for (var i = 0; i < events.length; i++) {
@@ -214,7 +230,84 @@ bidReportsApp
             }
 
             calculateTotals($scope.programStageDeDes);
-            _fillTemplateWithDemandData();
+            _fillTemplateWithDemandData("demandOffset");
+            $scope.loading = false;
+
+        }
+        function _prepareStockDemandReport() {
+
+            _prepareReportTemplate();
+
+            $scope.reportEvents = [];
+
+            var events = filterByDate($scope.events, 0);
+
+            // for each event run rules
+            for (var i = 0; i < events.length; i++) {
+                var eventUID = events[i].event;
+                var TEIUID = events[i].trackedEntityInstance;
+                var enrollmentUID = events[i].enrollment;
+
+                var sortedEvents = []
+                var evs = $scope.EventsByTEIMap[TEIUID];
+                sort(evs, sortedEvents);
+                evs = sortedEvents;
+
+                evs = {
+                    all: evs,
+                    byStage: getEventsByStage(evs)
+                };
+                var reportDataEvent = {
+                    event: events[i],
+                    TEI: $scope.TEIMap[TEIUID],
+                    prstDeDesValueMap: [],
+                    reportTEAPlusDeValueMap: []
+                };
+                // All des are visible in the start
+                reportDataEvent.prstDeDesValueMap = populateValue($scope.programStageDeDes, "visible");
+
+                var rulesEffect = _runRules(events[i], $scope.programRules, $scope.programStageDeByDeDeMap, $scope.TEIMap[TEIUID], $scope.EnrollmentMap[enrollmentUID], evs);
+
+
+                //get map of data values of prstde from evs
+                var deValueMapForEvent = getDeValueMap($scope.programStageDeDes, $scope.programStage.id, evs);
+                reportDataEvent.prstDeDesValueMap = mergeMap(reportDataEvent.prstDeDesValueMap, deValueMapForEvent);
+
+
+                // processRuleEffects
+                for (var key in rulesEffect) {
+                    var effect = rulesEffect[key];
+                    if (effect.dataElement) {
+                        if ($scope.programStageDeDeMap[effect.dataElement.id]) {
+                            if (deValueMapForEvent[effect.dataElement.id]) {
+                                // value exists
+                                reportDataEvent.prstDeDesValueMap[effect.dataElement.id] = deValueMapForEvent[effect.dataElement.id];
+                            }
+                            else if (effect.action == "HIDEFIELD" && effect.ineffect) {
+                                reportDataEvent.prstDeDesValueMap[effect.dataElement.id] = "hidden";
+                            }
+                        }
+                    }
+                }
+                reportDataEvent.reportTEAPlusDeValueMap = [];
+                var dueDateEvent = {
+                    id: "due_date",
+                    name: "due date",
+                    type: "meta",
+                    value: DateUtils.formatFromApiToUser(reportDataEvent.event.dueDate)
+                }
+
+                reportDataEvent.event.isOverDue = DateUtils.getToday() > reportDataEvent.event.dueDate ? true : false;
+                reportDataEvent.reportTEAPlusDeValueMap[dueDateEvent.id] = dueDateEvent;
+
+                formatAtt(reportDataEvent.reportTEAPlusDeValueMap, reportDataEvent.TEI.attributes);
+                formatDes(reportDataEvent.reportTEAPlusDeValueMap, $scope.programStageDeDes, reportDataEvent.prstDeDesValueMap);
+
+                $scope.reportEvents.push(reportDataEvent);
+            }
+
+            calculateTotals($scope.programStageDeDes);
+            _fillTemplateWithDemandData("demand");
             $scope.loading = false;
         }
 
@@ -283,6 +376,19 @@ bidReportsApp
             }
         }
 
+        function _manageDates(flag){
+
+            if ($scope.Days != 0 && flag=='radio') {
+                $scope.endDate = new Date(new Date().getTime() + parseInt($scope.Days) * 24 * 60 * 60 * 1000);
+            }
+            if (!$scope.endDate){
+                $scope.endDate = new Date();
+            }
+            if (!$scope.startDate || flag=='radio'){
+                $scope.startDate = new Date();
+            }
+
+        }
         function getDeValueMap(prstDes, programStage, evs) {
 
             var deValueMap = [];
@@ -339,8 +445,6 @@ bidReportsApp
         }
 
         function filterByDate(events, days) {
-
-
             var today = new Date();
             var futureDate = new Date(today.getTime() + parseInt(days)*24*60*60*1000);
             var filteredEvents = [];
@@ -351,6 +455,16 @@ bidReportsApp
             return filteredEvents;
         }
 
+        function filterBetweenDates(events,startD,endD){
+            var filteredEvents = [];
+            var date;
+            for (var i = 0; i < events.length; i++) {
+                date = new Date(events[i].dueDate);
+                if ( date < endD && date > startD)
+                    filteredEvents.push(events[i]);
+            }
+            return filteredEvents;
+        }
         function formatAtt(map, attributes) {
             for (var i = 0; i < attributes.length; i++) {
 
@@ -421,18 +535,18 @@ bidReportsApp
 
         function _fillTemplateWithBalanceData(data) {
             for (var i = 0; i < data.height; i++) {
-                $scope.balanceDeToTemplateObjectMap[data.rows[i][0]].balance = data.rows[i][2];
+                $scope.balanceDeToTemplateObjectMap[data.rows[i][0]].balance = parseInt(data.rows[i][2]);
             }
         }
 
-        function _fillTemplateWithDemandData() {
-            $scope.template = utilityService.populateValue($scope.template, "demand", 0);
+        function _fillTemplateWithDemandData(field) {
+            $scope.template = utilityService.populateValue($scope.template, field, 0);
 
             for (var id in $scope.totals) {
                 var de = deMap[id];
                 if (!de) continue;
                 var value = $scope.totals[de.id];
-                $scope.groupToTemplateObjectMap[de.groupby].demand = $scope.groupToTemplateObjectMap[de.groupby].demand + value;
+                $scope.groupToTemplateObjectMap[de.groupby][field] = $scope.groupToTemplateObjectMap[de.groupby][field] + value;
             }
         }
 
@@ -457,16 +571,18 @@ bidReportsApp
             //        [       ]]
             //};
             for (var i = 0; i < $scope.template.length; i++) {
-                if (data2.max < $scope.template[i].balance)
+                if (data2.max < $scope.template[i].balance) {
                     data2.max = $scope.template[i].balance;
+                }
 
-                if (data2.max < $scope.template[i].demand)
-                    data2.max = $scope.template[i].demand;
+                if (data2.max < $scope.template[i].demand + $scope.template[i].demandOffset) {
+                    data2.max = $scope.template[i].demand + $scope.template[i].demandOffset;
+                }
 
-                data.values.push({type: "demand", value: $scope.template[i].demand});
+                data.values.push({type: "demand", value: $scope.template[i].demand + $scope.template[i].demandOffset});
                 data.values.push({type: "balance", value: $scope.template[i].balance});
 
-                data2.matrix[0].push($scope.template[i].demand);
+                data2.matrix[0].push($scope.template[i].demand + $scope.template[i].demandOffset);
                 data2.matrix[1].push(parseInt($scope.template[i].balance));
 
                 data2.xAxisLabels.push($scope.template[i].name);
