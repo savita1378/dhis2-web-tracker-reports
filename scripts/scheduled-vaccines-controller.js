@@ -47,7 +47,7 @@ function($scope,
     $scope.EventsByTEIMap = [];
     $scope.programStageDeDesMap = [];
     $scope.loading = true;
-    $scope.showAlreadyGivenVaccines = false;
+    $scope.showAlreadyGivenVaccines = true;
 /* End */
     /* Functions */
     _fetchMetaData = function(){
@@ -178,7 +178,7 @@ function($scope,
             var TEIUID = $scope.events[i].trackedEntityInstance;
             var enrollmentUID = $scope.events[i].enrollment;
 
-            if (TEIUID == "x4KZ0FtrMi2"){
+            if (TEIUID == "uteaIH2XEX4"){
                 debugger
             }
             var sortedEvents = []

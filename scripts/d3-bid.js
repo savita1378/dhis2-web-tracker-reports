@@ -7,7 +7,7 @@ $(document).ready(function () {
         var top_margin = height/15;
         var bottom_margin = height/10;
         var left_margin = _width/10;
-        var right_margin = _width/5;
+        var right_margin = _width/4.5;
         var padding = top_margin/6;
 
         var h = height - top_margin - bottom_margin;

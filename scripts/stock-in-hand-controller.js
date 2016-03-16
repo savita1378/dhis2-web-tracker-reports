@@ -153,8 +153,8 @@ bidReportsApp
             //        [       ]]
             //};
             for (var i = 0; i < $scope.template.length; i++) {
-                if (data2.max < $scope.template[i].balance)
-                    data2.max = $scope.template[i].balance;
+                if (data2.max < parseInt($scope.template[i].balance))
+                    data2.max = parseInt($scope.template[i].balance);
 
               //   data.values.push({type: "demand", value: $scope.template[i].demand});
                 data.values.push({type: "balance", value: $scope.template[i].balance});

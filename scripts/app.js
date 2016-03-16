@@ -36,6 +36,9 @@ var bidReportsApp = angular.module('bidReportsApp',['ui.bootstrap',
         }).when('/vaccine-history', {
             templateUrl:'views/vaccine-history.html',
             controller: 'VaccineHistoryController'
+        }).when('/stock-demand', {
+            templateUrl:'views/stock-demand.html',
+            controller: 'StockDemandController'
         }).otherwise({
             redirectTo : '/'
         });
